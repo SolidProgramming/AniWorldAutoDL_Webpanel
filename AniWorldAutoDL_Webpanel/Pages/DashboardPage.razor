@@ -21,7 +21,8 @@
         <tbody>
             <tr>
                 <td class="text-center align-middle" width="50">
-                    <HxIcon Icon="BootstrapIcon.Hourglass"></HxIcon>
+                    @* <HxIcon Icon="BootstrapIcon.Hourglass"></HxIcon> *@
+                    <HxSpinner Color="ThemeColor.Secondary" Size="SpinnerSize.Small"></HxSpinner>
                 </td>
                 <td class="text-center align-middle" style="font-family: 'Roboto', sans-serif;">
                     Jujutsu Kaisen
@@ -34,10 +35,10 @@
                 </td>
                 <td class="text-center align-middle" width="90">
                     <div>
-                        <img class="d-inline languageFlag" src="img/german_dub.svg">
-                        <img class="d-inline languageFlag" src="img/english_dub.svg">
-                        @*<img class="d-inline languageFlag" src="img/german_sub.svg">
-                        <img class="d-inline languageFlag" src="img/english_sub.svg"> *@
+                        <img class="d-inline" style="width: 32px" src="img/german_dub.svg">
+                        <img class="d-inline" style="width: 32px" src="img/english_dub.svg">
+                        @*<img class="d-inline" style="width: 32px" src="img/german_sub.svg">
+                        <img class="d-inline" style="width: 32px" src="img/english_sub.svg"> *@
                     </div>
                 </td>
                 <td class="text-center align-middle">
@@ -46,12 +47,54 @@
                     </HxProgress>
                 </td>
                 <td class="text-center align-middle" width="50">
-                    <HxButton Color="ThemeColor.Success" Icon="BootstrapIcon.PlayFill"></HxButton>
+                    <HxButton Color="ThemeColor.Warning" Icon="BootstrapIcon.StopFill" ></HxButton>
                 </td>
                 <td class="text-center align-middle" width="50">
-                    <HxButton Color="ThemeColor.Warning" Icon="BootstrapIcon.PencilFill"></HxButton>
+                    <HxButton Color="ThemeColor.Secondary" Icon="BootstrapIcon.PencilFill" OnClick="@MoveToConverterSettings"></HxButton>
                 </td>
             </tr>
+            @* <tr>
+            <td class="text-center align-middle" width="50">
+            <HxIcon Icon="BootstrapIcon.Hourglass"></HxIcon>
+            </td>
+            <td class="text-center align-middle" style="font-family: 'Roboto', sans-serif;">
+            Jujutsu Kaisen
+            </td>
+            <td class="text-center align-middle" width="70" style="font-family: 'Roboto', sans-serif;">
+            S01
+            </td>
+            <td class="text-center align-middle" width="70" style="font-family: 'Roboto', sans-serif;">
+            E01
+            </td>
+            <td class="text-center align-middle" width="90">
+            <div>
+            <img class="d-inline" style="width: 32px" src="img/german_dub.svg">
+            <img class="d-inline" style="width: 32px" src="img/english_dub.svg">
+            @*<img class="d-inline" style="width: 32px" src="img/german_sub.svg">
+            <img class="d-inline" style="width: 32px" src="img/english_sub.svg">
+            </div>
+            </td>
+            <td class="text-center align-middle">
+            <HxProgress>
+            <HxProgressBar Value="25" Color="ThemeColor.Success" />
+            </HxProgress>
+            </td>
+            <td class="text-center align-middle" width="50">
+            <HxButton Color="ThemeColor.Success" Icon="BootstrapIcon.PlayFill"></HxButton>
+            </td>
+            <td class="text-center align-middle" width="50">
+            <HxButton Color="ThemeColor.Warning" Icon="BootstrapIcon.XCircleFill"></HxButton>
+            </td>
+            </tr> *@
         </tbody>
     </table>
 </div>
+
+
+
+@code {
+    private void MoveToConverterSettings()
+    {
+        NavigationManager.NavigateTo(Routes.ConverterSettings);
+    }
+}
