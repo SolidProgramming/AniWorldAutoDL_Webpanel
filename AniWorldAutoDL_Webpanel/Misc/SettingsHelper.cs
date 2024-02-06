@@ -22,6 +22,11 @@ namespace AniWorldAutoDL_Webpanel.Misc
                 path = "settings.json";
             }
 
+            if (!File.Exists(path))
+            {
+                throw new FileNotFoundException();
+            }
+
             using StreamReader r = new(path);
             string json = r.ReadToEnd();
 
