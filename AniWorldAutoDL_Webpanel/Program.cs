@@ -1,4 +1,9 @@
+global using AniWorldAutoDL_Webpanel.Models;
+global using AniWorldAutoDL_Webpanel.Classes;
+global using AniWorldAutoDL_Webpanel.Interfaces;
+global using AniWorldAutoDL_Webpanel.Services;
 global using AniWorldAutoDL_Webpanel.Enums;
+global using AniWorldAutoDL_Webpanel.Misc;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 
