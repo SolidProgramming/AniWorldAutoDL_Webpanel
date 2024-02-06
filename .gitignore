@@ -361,3 +361,5 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+/AniWorldAutoDL_Webpanel/Binaries/ffmpeg.exe
+/AniWorldAutoDL_Webpanel/Binaries/ffprobe.exe
