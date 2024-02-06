@@ -1,0 +1,14 @@
+﻿@attribute [Route(Routes.Shutdown)]
+
+@code {
+    protected override void OnAfterRender(bool firstRender)
+    {
+        StopServer();
+        base.OnAfterRender(firstRender);
+    }
+
+    private void StopServer()
+    {
+        Environment.Exit(0);
+    }
+}

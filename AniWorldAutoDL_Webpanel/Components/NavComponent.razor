@@ -1,7 +1,6 @@
 ﻿@inherits LayoutComponentBase
 @inject NavigationManager NavManager
 @inject IHxMessengerService ToastService
-@inject IJSRuntime JSInterop
 
 <HxSidebar CssClass="sticky-top">
     <HeaderTemplate>
@@ -11,14 +10,18 @@
         <HxSidebarItem Icon="BootstrapIcon.Columns" Href="@Routes.Dashboard">
             <ContentTemplate>
                 Dashboard
+                <HxBadge Color="ThemeColor.Secondary" CssClass="ms-2">
+
+                </HxBadge>
             </ContentTemplate>
         </HxSidebarItem>
-        <HxSidebarItem CssClass="mt-5">
+
+        <HxSidebarItem Icon="BootstrapIcon.BoxArrowLeft" CssClass="mt-5 text-danger" Href="@Routes.Shutdown">
             <ContentTemplate>
-                <HxButton OnClick="StopServer" Icon="BootstrapIcon.BoxArrowLeft" CssClass="text-danger p-0">Server Stoppen</HxButton>
+                Server Stoppen
             </ContentTemplate>
         </HxSidebarItem>
-        <HxSidebarItem Icon="BootstrapIcon.Gear" Href="@Routes.Settings" CssClass="border-top pt-2 text-warning">
+        <HxSidebarItem Icon="BootstrapIcon.Gear" CssClass="border-top pt-2 text-warning" Href="@Routes.Settings">
             <ContentTemplate>
                 Einstellungen
             </ContentTemplate>
@@ -28,9 +31,5 @@
 </HxSidebar>
 
 @code {
-    private void StopServer()
-    {
-        JSInterop.InvokeVoidAsync("window.close");
-        Environment.Exit(0);
-    }
+    
 }
