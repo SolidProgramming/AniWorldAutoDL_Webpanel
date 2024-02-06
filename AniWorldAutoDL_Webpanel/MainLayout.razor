@@ -1,3 +1,11 @@
 ﻿@inherits LayoutComponentBase
+@inject NavigationManager NavManager
+@inject IHxMessengerService ToastService
 
-<main> @Body </main>
+<div class="p-4 d-md-flex min-vh-100">
+    <NavComponent></NavComponent>
+    <HxMessenger CssClass="mx-3 my-3" Position="ToastContainerPosition.BottomEnd" />
+    <div class="main p-4 flex-grow-1 overflow-hidden">
+        @Body
+    </div>
+</div>

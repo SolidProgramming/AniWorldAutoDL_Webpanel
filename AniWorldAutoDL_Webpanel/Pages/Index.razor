@@ -1,3 +1,6 @@
-﻿@page "/"
+﻿@attribute [Route(Routes.Dashboard)]
+@attribute [Route(Routes.Index)]
+@inject IHxMessengerService ToastService
+@inject IApiService ApiService
+@inject NavigationManager NavigationManager
 
-<h1>Hello, world!</h1>
