@@ -1,3 +1,4 @@
+global using AniWorldAutoDL_Webpanel.Enums;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 
