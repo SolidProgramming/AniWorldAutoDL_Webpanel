@@ -3,12 +3,33 @@ using Newtonsoft.Json;
 using System.Net.Http.Headers;
 using System.Net;
 using System.Text;
+using AniWorldAutoDL_Webpanel.Interfaces;
 
 namespace AniWorldAutoDL_Webpanel.Services
 {
     internal class ApiService(HttpClient httpClient)
         : IApiService
     {
+        public async Task<bool> Login(string username, string password)
+        {
+            JwtResponseModel? jwtResponse = await PostAsync<JwtResponseModel>("login", new UserModel() { Username = username, Password = password });
+
+            if (jwtResponse is null || string.IsNullOrEmpty(jwtResponse.Token))
+            {
+                UserStorageHelper.Set(default!);
+                return false;
+            }
+
+            UserModel user = new()
+            {
+                Token = jwtResponse.Token,
+                Username = username
+            };
+
+            UserStorageHelper.Set(user);
+
+            return true;
+        }
         public async Task<T?> GetAsync<T>(string uri)
         {
             HttpRequestMessage request = new(HttpMethod.Get, uri);
