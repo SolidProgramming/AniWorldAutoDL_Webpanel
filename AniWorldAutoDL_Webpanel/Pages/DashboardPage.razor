@@ -1,0 +1,57 @@
+﻿@attribute [Route(Routes.Dashboard)]
+@attribute [Route(Routes.Index)]
+@inject IHxMessengerService ToastService
+@inject IApiService ApiService
+@inject NavigationManager NavigationManager
+
+<div class="container">
+    <table class="table">
+        <thead>
+            <tr>
+                <th scope="col" class="text-center" style="font-family: 'Roboto', sans-serif;">Status</th>
+                <th scope="col" class="text-center" style="font-family: 'Roboto', sans-serif;">Name</th>
+                <th scope="col" class="text-center" style="font-family: 'Roboto', sans-serif;">Staffel</th>
+                <th scope="col" class="text-center" style="font-family: 'Roboto', sans-serif;">Episode</th>
+                <th scope="col" class="text-center"></th>
+                <th scope="col" class="text-center" style="font-family: 'Roboto', sans-serif;">Progress</th>
+                <th scope="col"></th>
+                <th scope="col"></th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td class="text-center align-middle" width="50">
+                    <HxIcon Icon="BootstrapIcon.Hourglass"></HxIcon>
+                </td>
+                <td class="text-center align-middle" style="font-family: 'Roboto', sans-serif;">
+                    Jujutsu Kaisen
+                </td>
+                <td class="text-center align-middle" width="70" style="font-family: 'Roboto', sans-serif;">
+                    S01
+                </td>
+                <td class="text-center align-middle" width="70" style="font-family: 'Roboto', sans-serif;">
+                    E01
+                </td>
+                <td class="text-center align-middle" width="90">
+                    <div>
+                        <img class="d-inline languageFlag" src="img/german_dub.svg">
+                        <img class="d-inline languageFlag" src="img/english_dub.svg">
+                        @*<img class="d-inline languageFlag" src="img/german_sub.svg">
+                        <img class="d-inline languageFlag" src="img/english_sub.svg"> *@
+                    </div>
+                </td>
+                <td class="text-center align-middle">
+                    <HxProgress>
+                        <HxProgressBar Value="25" Color="ThemeColor.Success" />
+                    </HxProgress>
+                </td>
+                <td class="text-center align-middle" width="50">
+                    <HxButton Color="ThemeColor.Success" Icon="BootstrapIcon.PlayFill"></HxButton>
+                </td>
+                <td class="text-center align-middle" width="50">
+                    <HxButton Color="ThemeColor.Warning" Icon="BootstrapIcon.PencilFill"></HxButton>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</div>
