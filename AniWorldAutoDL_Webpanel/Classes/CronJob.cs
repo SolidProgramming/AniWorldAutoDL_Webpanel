@@ -4,23 +4,20 @@ using Quartz;
 namespace AniWorldAutoDL_Webpanel.Classes
 {
     [DisallowConcurrentExecution]
-    internal class CronJob(ILogger<CronJob> logger, IAuthService authService, IApiService apiService)
+    internal class CronJob(ILogger<CronJob> logger, IApiService apiService)
          : IJob
     {
         public async Task Execute(IJobExecutionContext context)
         {
-            Console.Clear();
-            await Console.Out.WriteLineAsync($"{DateTime.Now} | Executing Download Job!");
+            SettingsModel? settings = SettingsHelper.ReadSettings<SettingsModel>();            
 
-            SettingsModel? settings = SettingsHelper.ReadSettings<SettingsModel>();
-
-            if (settings is null)
+            if (settings is null || string.IsNullOrEmpty(settings.DownloadPath) || string.IsNullOrEmpty(settings.User.Username) || string.IsNullOrEmpty(settings.User.Password))
             {
                 logger.LogError($"{DateTime.Now} | {ErrorMessage.ReadSettings}");
                 return;
             }
 
-            bool loginSuccess = await authService.Login(settings.User.Username, settings.User.Password);
+            bool loginSuccess = await apiService.Login(settings.User.Username, settings.User.Password);
 
             if (!loginSuccess)
             {

@@ -18,18 +18,29 @@ builder.Services.AddHsts(_ =>
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
 
-builder.Services.AddHttpClient();
+SettingsModel? settings = SettingsHelper.ReadSettings<SettingsModel>();
 
-//builder.Services.AddQuartz(_ =>
-//{
-//    _.AddJobAndTrigger<CronJob>(15);
-//});
+if (settings is null)
+{
+    Console.WriteLine("Couldn't read or find Settings file!. Shutting down!");
+    return;
+}
 
-//builder.Services.AddQuartzHostedService(_ =>
-//{
-//    _.WaitForJobsToComplete = true;
-//    _.AwaitApplicationStarted = true;
-//});
+builder.Services.AddSingleton(_ =>
+{
+    return new HttpClient() { BaseAddress = new Uri(settings.ApiUrl) };
+});
+
+builder.Services.AddQuartz(_ =>
+{
+    _.AddJobAndTrigger<CronJob>(15);
+});
+
+builder.Services.AddQuartzHostedService(_ =>
+{
+    _.WaitForJobsToComplete = true;
+    _.AwaitApplicationStarted = true;
+});
 
 builder.Services.AddSingleton<IApiService, ApiService>();
 
@@ -46,4 +57,4 @@ app.UseRouting();
 app.MapBlazorHub();
 app.MapFallbackToPage("/_Host");
 
-app.Run();
+await app.RunAsync();

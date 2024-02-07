@@ -59,5 +59,17 @@ namespace AniWorldAutoDL_Webpanel.Misc
 
             return null;
         }
+
+        internal static string Repeat(this string text, int n)
+        {
+            ReadOnlySpan<char> textAsSpan = text.AsSpan();
+            Span<char> span = new(new char[textAsSpan.Length * n]);
+            for (var i = 0; i < n; i++)
+            {
+                textAsSpan.CopyTo(span.Slice(i * textAsSpan.Length, textAsSpan.Length));
+            }
+
+            return span.ToString();
+        }
     }
 }

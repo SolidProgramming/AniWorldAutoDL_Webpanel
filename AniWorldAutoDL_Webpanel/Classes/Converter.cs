@@ -6,6 +6,9 @@ namespace AniWorldAutoDL_Webpanel.Classes
 {
     internal static class Converter
     {
+        internal delegate void ConverterStateChangedEvent(ConverterState state);
+        internal static event ConverterStateChangedEvent ConverterStateChanged;
+
         internal delegate void ConvertProgressChangedEvent(ConvertProgressModel convertProgress);
         internal static event ConvertProgressChangedEvent ConvertProgressChanged;
 
@@ -20,6 +23,8 @@ namespace AniWorldAutoDL_Webpanel.Classes
 
         internal static async Task<CommandResult?> StartDownload(string streamUrl, DownloadModel download, string downloadPath)
         {
+            ConverterStateChanged?.Invoke(ConverterState.Downloading);
+
             TimeSpan streamDuration = await GetStreamDuration(streamUrl);
 
             if (streamDuration == TimeSpan.Zero)
@@ -53,6 +58,10 @@ namespace AniWorldAutoDL_Webpanel.Classes
             catch (Exception ex)
             {
                 Console.Out.WriteLine($"{DateTime.Now} | {ex}");
+            }
+            finally
+            {
+                ConverterStateChanged?.Invoke(ConverterState.Idle);
             }
 
             return result;
@@ -151,13 +160,19 @@ namespace AniWorldAutoDL_Webpanel.Classes
 
             string binPath = Helper.GetFFProbePath();
 
+            CancellationTokenSource cts = new(TimeSpan.FromSeconds(15));
+
             try
             {
                 await Cli.Wrap(binPath)
                 .WithArguments(args)
                     .WithValidation(CommandResultValidation.None)
                     .WithStandardOutputPipe(PipeTarget.ToStringBuilder(stdOutBuffer))
-                        .ExecuteAsync();
+                        .ExecuteAsync(cts.Token);
+            }catch(OperationCanceledException)
+            {
+                Console.Out.WriteLine($"{DateTime.Now} | Timeout | Retry on next cycle");
+                return TimeSpan.Zero;
             }
             catch (Exception)
             {

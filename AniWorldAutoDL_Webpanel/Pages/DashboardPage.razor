@@ -21,71 +21,70 @@
         <tbody>
             <tr>
                 <td class="text-center align-middle" width="50">
-                    @* <HxIcon Icon="BootstrapIcon.Hourglass"></HxIcon> *@
-                    <HxSpinner Color="ThemeColor.Secondary" Size="SpinnerSize.Small"></HxSpinner>
+                    @switch (ConverterState)
+                    {
+                        case ConverterState.Downloading:
+                            <HxSpinner Color="ThemeColor.Secondary" Size="SpinnerSize.Small"></HxSpinner>
+                            break;
+                        case ConverterState.Idle:
+                            <HxIcon Icon="BootstrapIcon.Hourglass"></HxIcon>
+                            break;
+                        default:
+                            break;
+                    }
                 </td>
-                <td class="text-center align-middle" style="font-family: 'Roboto', sans-serif;">
-                    Jujutsu Kaisen
+                <td class="text-center align-middle" width="600" style="font-family: 'Roboto', sans-serif;">
+                    @if (Download is not null)
+                    {
+                        @Download.Name
+                    }
+                    else
+                    {
+                        <HxIcon Icon="BootstrapIcon.Dash"></HxIcon>
+                    }
                 </td>
                 <td class="text-center align-middle" width="70" style="font-family: 'Roboto', sans-serif;">
-                    S01
+                    @if (Download is not null)
+                    {
+                        @($"S{Download.Season:D2}")
+                    }
+                    else
+                    {
+                        <HxIcon Icon="BootstrapIcon.Dash"></HxIcon>
+                    }
                 </td>
                 <td class="text-center align-middle" width="70" style="font-family: 'Roboto', sans-serif;">
-                    E01
+                    @if (Download is not null)
+                    {
+                        @($"S{Download.Episode:D2}")
+                    }
+                    else
+                    {
+                        <HxIcon Icon="BootstrapIcon.Dash"></HxIcon>
+                    }
                 </td>
                 <td class="text-center align-middle" width="90">
-                    <div>
-                        <img class="d-inline" style="width: 32px" src="img/german_dub.svg">
-                        <img class="d-inline" style="width: 32px" src="img/english_dub.svg">
-                        @*<img class="d-inline" style="width: 32px" src="img/german_sub.svg">
-                        <img class="d-inline" style="width: 32px" src="img/english_sub.svg"> *@
-                    </div>
+                    @if (Download is not null)
+                    {
+                        <LanguageFlagComponent Languages="@Download.LanguageFlag"></LanguageFlagComponent>
+                    }
+                    else
+                    {
+                        <HxIcon Icon="BootstrapIcon.Dash"></HxIcon>
+                    }
                 </td>
-                <td class="text-center align-middle">
+                <td class="text-center align-middle" width="250">
                     <HxProgress>
-                        <HxProgressBar Value="25" Color="ThemeColor.Success" />
+                        <HxProgressBar Value="ConvertProgress.ProgressPercent" Color="ThemeColor.Success" />
                     </HxProgress>
                 </td>
                 <td class="text-center align-middle" width="50">
-                    <HxButton Color="ThemeColor.Warning" Icon="BootstrapIcon.StopFill" ></HxButton>
+                    <HxButton Color="ThemeColor.Warning" Icon="BootstrapIcon.StopFill"></HxButton>
                 </td>
                 <td class="text-center align-middle" width="50">
                     <HxButton Color="ThemeColor.Secondary" Icon="BootstrapIcon.PencilFill" OnClick="@MoveToConverterSettings"></HxButton>
                 </td>
             </tr>
-            @* <tr>
-            <td class="text-center align-middle" width="50">
-            <HxIcon Icon="BootstrapIcon.Hourglass"></HxIcon>
-            </td>
-            <td class="text-center align-middle" style="font-family: 'Roboto', sans-serif;">
-            Jujutsu Kaisen
-            </td>
-            <td class="text-center align-middle" width="70" style="font-family: 'Roboto', sans-serif;">
-            S01
-            </td>
-            <td class="text-center align-middle" width="70" style="font-family: 'Roboto', sans-serif;">
-            E01
-            </td>
-            <td class="text-center align-middle" width="90">
-            <div>
-            <img class="d-inline" style="width: 32px" src="img/german_dub.svg">
-            <img class="d-inline" style="width: 32px" src="img/english_dub.svg">
-            @*<img class="d-inline" style="width: 32px" src="img/german_sub.svg">
-            <img class="d-inline" style="width: 32px" src="img/english_sub.svg">
-            </div>
-            </td>
-            <td class="text-center align-middle">
-            <HxProgress>
-            <HxProgressBar Value="25" Color="ThemeColor.Success" />
-            </HxProgress>
-            </td>
-            <td class="text-center align-middle" width="50">
-            <HxButton Color="ThemeColor.Success" Icon="BootstrapIcon.PlayFill"></HxButton>
-            </td>
-            <td class="text-center align-middle" width="50">
-            <HxButton Color="ThemeColor.Warning" Icon="BootstrapIcon.XCircleFill"></HxButton>
-            </td>
-            </tr> *@
         </tbody>
     </table>
 </div>
@@ -93,8 +92,54 @@
 
 
 @code {
+    ConvertProgressModel? ConvertProgress = new();
+    DownloadModel? Download = default;
+    ConverterState ConverterState = ConverterState.Idle;
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender)
+        {
+            Converter.ConvertStarted += Converter_ConvertStarted;
+            Converter.ConvertProgressChanged += Converter_ConvertProgressChanged;
+            Converter.ConverterStateChanged += Converter_ConverterStateChanged;
+        }
+
+        base.OnAfterRender(firstRender);
+    }
+
     private void MoveToConverterSettings()
     {
         NavigationManager.NavigateTo(Routes.ConverterSettings);
+    }
+
+    private void Converter_ConvertStarted(DownloadModel download)
+    {
+        if (Console.GetCursorPosition().Left > 0)
+        {
+            Console.WriteLine();
+        }
+
+        Console.Out.WriteLine($"Downloading: {download.Name} (S{download.Season:D2} E{download.Episode:D2})");
+
+        Download = download;
+    }
+
+    private void Converter_ConvertProgressChanged(ConvertProgressModel convertProgress)
+    {
+        ConvertProgress = convertProgress;
+        InvokeAsync(() => StateHasChanged());
+    }
+
+    private void Converter_ConverterStateChanged(ConverterState state)
+    {
+        ConverterState = state;
+
+        if (state == ConverterState.Idle)
+        {
+            Download = default;
+        }
+
+        InvokeAsync(() => StateHasChanged());
     }
 }

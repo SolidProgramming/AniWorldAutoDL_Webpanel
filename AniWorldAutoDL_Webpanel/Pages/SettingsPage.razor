@@ -1,0 +1,43 @@
+﻿@attribute [Route(Routes.Settings)]
+@inject IApiService ApiService
+@inject NavigationManager NavigationManager
+@inject IHxMessengerService ToastService
+
+<PageTitle>Einstellungen</PageTitle>
+
+<div class="container">
+    <div class="row">
+        <div class="col-sm-auto">
+            <div class="px-3 py-2">
+                <div class="my-2">
+                    <HxIcon CssClass="d-inline fs-5 text-primary" Icon="BootstrapIcon.Gear"></HxIcon>
+                    <h5 class="d-inline px-2">Generell:</h5>
+                </div>
+                <label class="text-warning mt-2">Interval (in Minuten)</label>
+                <HxInputNumber InputSize="InputSize.Small" CssClass="mt-2" Decimals="0" TValue="int" @bind-Value="CheckInterval" />
+            </div>
+        </div>
+        <div class="col-sm-auto">
+            <div class="px-3 py-2">
+                <div class="my-2">
+                    <HxIcon CssClass="d-inline fs-5 text-primary" Icon="BootstrapIcon.Activity"></HxIcon>
+                    <h5 class="d-inline px-2">Start:</h5>
+                </div>
+                <HxCheckbox CssClass="mt-2" TextCssClass="text-warning" Inline="true" @bind-Value="Autostart" Text="Autom. Downloads starten nach dem Einloggen" />
+            </div>
+        </div>
+    </div>
+    <div class="row mt-4">
+        <div class="col-6">
+            <HxButton Color="ThemeColor.Success" Icon="BootstrapIcon.Check" CssClass="w-100">Speichern</HxButton>
+        </div>
+        <div class="col-6">
+            <HxButton Outline="true" Color="ThemeColor.Warning" Icon="BootstrapIcon.XCircle" CssClass="w-100">Abbrechen</HxButton>
+        </div>
+    </div>
+</div>
+
+@code {
+    private bool Autostart { get; set; }
+    private int CheckInterval { get; set; }
+}
