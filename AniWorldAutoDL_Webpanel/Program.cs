@@ -18,6 +18,15 @@ builder.Services.AddHsts(_ =>
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
 
+bool binariesFound = Converter.FoundBinaries();
+
+if (!binariesFound)
+{
+    string parentFolder = Directory.GetParent(Helper.GetFFProbePath())!.FullName;
+    await Console.Out.WriteLineAsync($"{DateTime.Now} | {ErrorMessage.BinariesNotFound}\nPath: {parentFolder}");
+    return;
+}
+
 SettingsModel? settings = SettingsHelper.ReadSettings<SettingsModel>();
 
 if (settings is null)

@@ -174,8 +174,9 @@ namespace AniWorldAutoDL_Webpanel.Classes
                 Console.Out.WriteLine($"{DateTime.Now} | Timeout | Retry on next cycle");
                 return TimeSpan.Zero;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                Console.Out.WriteLine($"{DateTime.Now} | {ex}");
                 return TimeSpan.Zero;
             }
 

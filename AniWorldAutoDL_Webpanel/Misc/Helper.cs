@@ -1,11 +1,24 @@
-﻿namespace AniWorldAutoDL_Webpanel.Misc
+﻿using System.IO;
+
+namespace AniWorldAutoDL_Webpanel.Misc
 {
     internal static class Helper
     {
         internal static string GetFFMPEGPath()
-            => Path.Combine(Directory.GetCurrentDirectory(), Globals.FFMPEGBin);
+        {
+            if (Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER") == "true")
+                return Path.Combine(Directory.GetCurrentDirectory(), "appdata", Globals.FFMPEGBinDocker);
 
-        internal static string GetFFProbePath()
-            => Path.Combine(Directory.GetCurrentDirectory(), Globals.FFProbeBin);
+            return Path.Combine(Directory.GetCurrentDirectory(), Globals.FFMPEGBin);
+        }            
+
+        internal static string? GetFFProbePath()
+        {           
+            if (Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER") == "true")
+                return Path.Combine(Directory.GetCurrentDirectory(), "appdata", Globals.FFProbeBinDocker);
+
+            return Path.Combine(Directory.GetCurrentDirectory(), Globals.FFProbeBin);
+        }
+
     }
 }
