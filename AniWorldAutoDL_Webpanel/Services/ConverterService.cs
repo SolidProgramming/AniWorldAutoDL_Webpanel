@@ -5,7 +5,7 @@ using System.Text.RegularExpressions;
 
 namespace AniWorldAutoDL_Webpanel.Services
 {
-    public class ConverterService(ILogger<ConverterService> logger) 
+    public class ConverterService(ILogger<ConverterService> logger, IHostApplicationLifetime appLifetime) 
         : IConverterService
     {
         public delegate void ConverterStateChangedEvent(ConverterState state, DownloadModel? download = default);
@@ -19,9 +19,12 @@ namespace AniWorldAutoDL_Webpanel.Services
         private static DownloadModel Download { get; set; }
 
         private bool IsInitialized;
+        private CancellationToken CancellationToken { get; set; }
 
         public bool Init()
         {
+            CancellationToken = appLifetime.ApplicationStopping;
+
             if (!File.Exists(Helper.GetFFMPEGPath()))
             {
                 logger.LogError($"{DateTime.Now} | {ErrorMessage.FFMPEGBinarieNotFound}");
@@ -81,7 +84,7 @@ namespace AniWorldAutoDL_Webpanel.Services
                 .WithArguments(args)
                 .WithValidation(CommandResultValidation.ZeroExitCode)
                     .WithStandardErrorPipe(PipeTarget.ToDelegate(ReadOutput, Encoding.UTF8))
-                    .ExecuteAsync();
+                    .ExecuteAsync(CancellationToken);
             }
             catch (OperationCanceledException)
             {
