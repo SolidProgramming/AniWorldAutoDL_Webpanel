@@ -75,7 +75,14 @@
                 </td>
                 <td class="text-center align-middle" width="250">
                     <HxProgress>
-                        <HxProgressBar Value="ConvertProgress.ProgressPercent" Color="ThemeColor.Success" />
+                        @if (ConvertProgress is not null)
+                        {
+                            <HxProgressBar Value="ConvertProgress.ProgressPercent" Color="ThemeColor.Success" />
+                        }
+                        else
+                        {
+                            <HxProgressBar Value="0" Color="ThemeColor.Success" />
+                        }
                     </HxProgress>
                 </td>
                 <td class="text-center align-middle" width="50">
@@ -92,17 +99,17 @@
 
 
 @code {
-    ConvertProgressModel? ConvertProgress = new();
-    DownloadModel? Download = default;
+    ConvertProgressModel? ConvertProgress;
+    DownloadModel? Download;
     ConverterState ConverterState = ConverterState.Idle;
 
     protected override void OnAfterRender(bool firstRender)
     {
         if (firstRender)
         {
-            Converter.ConvertStarted += Converter_ConvertStarted;
-            Converter.ConvertProgressChanged += Converter_ConvertProgressChanged;
-            Converter.ConverterStateChanged += Converter_ConverterStateChanged;
+            ConverterService.ConvertStarted += Converter_ConvertStarted;
+            ConverterService.ConvertProgressChanged += Converter_ConvertProgressChanged;
+            ConverterService.ConverterStateChanged += Converter_ConverterStateChanged;
         }
 
         base.OnAfterRender(firstRender);
@@ -130,7 +137,8 @@
 
         if (state == ConverterState.Idle)
         {
-            Download = default;
+            Download = default;
+            ConvertProgress = default;
         }
 
         InvokeAsync(() => StateHasChanged());

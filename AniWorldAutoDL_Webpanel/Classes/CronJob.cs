@@ -4,7 +4,7 @@ using Quartz;
 namespace AniWorldAutoDL_Webpanel.Classes
 {
     [DisallowConcurrentExecution]
-    internal class CronJob(ILogger<CronJob> logger, IApiService apiService)
+    internal class CronJob(ILogger<CronJob> logger, IApiService apiService, IConverterService converterService)
          : IJob
     {
         public async Task Execute(IJobExecutionContext context)
@@ -73,7 +73,7 @@ namespace AniWorldAutoDL_Webpanel.Classes
 
                 episodeDownload.Download.Name = $"{episodeDownload.Download.Name.GetValidFileName()}[GerDub]";
 
-                CommandResult? result = await Converter.StartDownload(m3u8Url, episodeDownload.Download, settings.DownloadPath);
+                CommandResult? result = await converterService.StartDownload(m3u8Url, episodeDownload.Download, settings.DownloadPath);
 
                 //if (token.IsCancellationRequested || result?.ExitCode != 0)
                 //    continue;

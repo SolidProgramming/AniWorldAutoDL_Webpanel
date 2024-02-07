@@ -1,28 +1,54 @@
 ﻿using CliWrap;
+using Microsoft.Extensions.Logging;
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace AniWorldAutoDL_Webpanel.Classes
+namespace AniWorldAutoDL_Webpanel.Services
 {
-    internal static class Converter
+    public class ConverterService(ILogger<ConverterService> logger) 
+        : IConverterService
     {
-        internal delegate void ConverterStateChangedEvent(ConverterState state);
-        internal static event ConverterStateChangedEvent ConverterStateChanged;
+        public delegate void ConverterStateChangedEvent(ConverterState state);
+        public static event ConverterStateChangedEvent ConverterStateChanged;
 
-        internal delegate void ConvertProgressChangedEvent(ConvertProgressModel convertProgress);
-        internal static event ConvertProgressChangedEvent ConvertProgressChanged;
+        public delegate void ConvertProgressChangedEvent(ConvertProgressModel convertProgress);
+        public static event ConvertProgressChangedEvent ConvertProgressChanged;
 
-        internal delegate void ConvertStartedEvent(DownloadModel download);
-        internal static event ConvertStartedEvent ConvertStarted;
+        public delegate void ConvertStartedEvent(DownloadModel download);
+        public static event ConvertStartedEvent ConvertStarted;
         private static DownloadModel Download { get; set; }
 
-        internal static bool FoundBinaries()
+        private bool IsInitialized;
+
+        public bool Init()
         {
-            return ( File.Exists(Helper.GetFFMPEGPath()) && File.Exists(Helper.GetFFProbePath()) );
+            if (!File.Exists(Helper.GetFFMPEGPath()))
+            {
+                logger.LogError($"{DateTime.Now} | {ErrorMessage.FFMPEGBinarieNotFound}");
+                return false;
+            }
+
+            if (!File.Exists(Helper.GetFFProbePath()))
+            {
+                logger.LogError($"{DateTime.Now} | {ErrorMessage.FFProbeBinariesNotFound}");
+                return false;
+            }
+
+            IsInitialized = true;
+
+            logger.LogInformation($"{DateTime.Now} | {InfoMessage.ConverterServiceInit}");
+
+            return true;
         }
 
-        internal static async Task<CommandResult?> StartDownload(string streamUrl, DownloadModel download, string downloadPath)
+        public async Task<CommandResult?> StartDownload(string streamUrl, DownloadModel download, string downloadPath)
         {
+            if (!IsInitialized)
+            {
+                logger.LogError($"{DateTime.Now} | {ErrorMessage.ConverterServiceNotInitialized}");
+                return default;
+            }
+
             ConverterStateChanged?.Invoke(ConverterState.Downloading);
 
             TimeSpan streamDuration = await GetStreamDuration(streamUrl);
@@ -52,8 +78,7 @@ namespace AniWorldAutoDL_Webpanel.Classes
             }
             catch (OperationCanceledException)
             {
-                Console.Out.WriteLine($"{DateTime.Now} | Download for {Download.Name} aborted!");
-                Console.Out.WriteLine($"\n{DateTime.Now} | Press any key to close!");
+                logger.LogWarning($"{DateTime.Now} | Download abgerochen!");
             }
             catch (Exception ex)
             {
@@ -115,7 +140,7 @@ namespace AniWorldAutoDL_Webpanel.Classes
 
                 string timeText = timeMatch.Groups[1].Value;
                 progress.Time = TimeSpan.Parse(timeText);
-                double progressPercent = 100.0d * ( progress.Time.TotalSeconds / Download.StreamDuration.TotalSeconds );
+                double progressPercent = 100.0d * (progress.Time.TotalSeconds / Download.StreamDuration.TotalSeconds);
 
                 if (progressPercent <= 0.0)
                     return;
@@ -169,7 +194,8 @@ namespace AniWorldAutoDL_Webpanel.Classes
                     .WithValidation(CommandResultValidation.None)
                     .WithStandardOutputPipe(PipeTarget.ToStringBuilder(stdOutBuffer))
                         .ExecuteAsync(cts.Token);
-            }catch(OperationCanceledException)
+            }
+            catch (OperationCanceledException)
             {
                 Console.Out.WriteLine($"{DateTime.Now} | Timeout | Retry on next cycle");
                 return TimeSpan.Zero;
@@ -183,7 +209,11 @@ namespace AniWorldAutoDL_Webpanel.Classes
             string? stdOut = stdOutBuffer.ToString();
 
             if (string.IsNullOrEmpty(stdOut))
+            {
+
                 return TimeSpan.Zero;
+            }
+
 
             return TimeSpan.Parse(stdOut);
         }

@@ -18,27 +18,7 @@ builder.Services.AddHsts(_ =>
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
 
-bool binariesFound = Converter.FoundBinaries();
-
-if (!binariesFound)
-{
-    string parentFolder = Directory.GetParent(Helper.GetFFProbePath())!.FullName;
-    await Console.Out.WriteLineAsync($"{DateTime.Now} | {ErrorMessage.BinariesNotFound}\nPath: {parentFolder}");
-    return;
-}
-
-SettingsModel? settings = SettingsHelper.ReadSettings<SettingsModel>();
-
-if (settings is null)
-{
-    Console.WriteLine("Couldn't read or find Settings file!. Shutting down!");
-    return;
-}
-
-builder.Services.AddSingleton(_ =>
-{
-    return new HttpClient() { BaseAddress = new Uri(settings.ApiUrl) };
-});
+builder.Services.AddHttpClient<IApiService, ApiService>();
 
 builder.Services.AddQuartz(_ =>
 {
@@ -52,6 +32,7 @@ builder.Services.AddQuartzHostedService(_ =>
 });
 
 builder.Services.AddSingleton<IApiService, ApiService>();
+builder.Services.AddSingleton<IConverterService, ConverterService>();
 
 builder.Services.AddHxServices();
 builder.Services.AddHxMessenger();
@@ -65,5 +46,11 @@ app.UseRouting();
 
 app.MapBlazorHub();
 app.MapFallbackToPage("/_Host");
+
+IApiService apiService = app.Services.GetRequiredService<IApiService>();
+apiService.Init();
+
+IConverterService converterService = app.Services.GetRequiredService<IConverterService>();
+converterService.Init();
 
 await app.RunAsync();

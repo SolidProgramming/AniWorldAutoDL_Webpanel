@@ -1,6 +1,6 @@
 ﻿namespace AniWorldAutoDL_Webpanel.Enums
 {
-    internal enum ConverterState
+    public enum ConverterState
     {
         Idle,
         Downloading,

@@ -7,9 +7,36 @@ using AniWorldAutoDL_Webpanel.Interfaces;
 
 namespace AniWorldAutoDL_Webpanel.Services
 {
-    internal class ApiService(HttpClient httpClient)
+    public class ApiService(ILogger<ApiService> logger, HttpClient httpClient)
         : IApiService
     {
+        private bool IsInitialized;
+
+        public bool Init()
+        {
+            SettingsModel? settings = SettingsHelper.ReadSettings<SettingsModel>();
+
+            if (settings is null || string.IsNullOrEmpty(settings.ApiUrl))
+            {
+                logger.LogError($"{DateTime.Now} | {ErrorMessage.ReadSettings}");
+                return false;
+            }
+
+            if (!Uri.TryCreate(settings.ApiUrl, UriKind.Absolute, out Uri? apiUri))
+            {
+                logger.LogError($"{DateTime.Now} | {ErrorMessage.ReadSettingsApiUrl}");
+                return false;
+            }
+
+            httpClient.BaseAddress = apiUri;
+
+            IsInitialized = true;
+
+            logger.LogInformation($"{DateTime.Now} | {InfoMessage.ApiServiceInit}");
+
+            return true;
+        }
+
         public async Task<bool> Login(string username, string password)
         {
             JwtResponseModel? jwtResponse = await PostAsync<JwtResponseModel>("login", new UserModel() { Username = username, Password = password });
@@ -70,6 +97,12 @@ namespace AniWorldAutoDL_Webpanel.Services
 
         private async Task<T?> SendRequest<T>(HttpRequestMessage request)
         {
+            if (!IsInitialized)
+            {
+                logger.LogError($"{DateTime.Now} | {ErrorMessage.APIServiceNotInitialized}");
+                return default;
+            }
+
             UserModel? user = UserStorageHelper.Get();
 
             if (user is not null && !string.IsNullOrEmpty(user.Token))
