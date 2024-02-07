@@ -6,8 +6,18 @@ global using AniWorldAutoDL_Webpanel.Enums;
 global using AniWorldAutoDL_Webpanel.Misc;
 using Quartz;
 using Havit.Blazor.Components.Web;
+using System.Diagnostics;
+using System.Runtime.InteropServices;
+
+if (AnotherInstanceExists())
+{
+    OpenBrowser("https://localhost:5443");
+    return;
+}
 
 WebApplicationBuilder? builder = WebApplication.CreateBuilder(args);
+
+builder.WebHost.UseUrls("http://localhost:5080", "https://localhost:5443");
 
 builder.Services.AddHsts(_ =>
 {
@@ -53,4 +63,42 @@ apiService.Init();
 IConverterService converterService = app.Services.GetRequiredService<IConverterService>();
 converterService.Init();
 
+OpenBrowser("https://localhost:5443");
+
 await app.RunAsync();
+
+static void OpenBrowser(string url)
+{
+    if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+    {
+        Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
+    }
+    else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+    {
+        Process.Start("xdg-open", url);
+    }
+    else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+    {
+        Process.Start("open", url);
+    }
+    else
+    {
+        // throw 
+    }
+}
+
+static bool AnotherInstanceExists()
+{
+    Process currentRunningProcess = Process.GetCurrentProcess();
+
+    Process[] listOfProcs = Process.GetProcessesByName(currentRunningProcess.ProcessName);
+
+    foreach (Process proc in listOfProcs)
+    {
+
+        if (( proc.MainModule.FileName == currentRunningProcess.MainModule.FileName ) && ( proc.Id != currentRunningProcess.Id ))
+
+            return true;
+    }
+    return false;
+}
