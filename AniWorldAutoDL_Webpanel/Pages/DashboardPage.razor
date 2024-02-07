@@ -115,13 +115,6 @@
 
     private void Converter_ConvertStarted(DownloadModel download)
     {
-        if (Console.GetCursorPosition().Left > 0)
-        {
-            Console.WriteLine();
-        }
-
-        Console.Out.WriteLine($"Downloading: {download.Name} (S{download.Season:D2} E{download.Episode:D2})");
-
         Download = download;
     }
 
