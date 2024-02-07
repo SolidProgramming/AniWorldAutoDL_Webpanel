@@ -1,5 +1,4 @@
 ﻿using CliWrap;
-using Microsoft.Extensions.Logging;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -9,21 +8,26 @@ namespace AniWorldAutoDL_Webpanel.Services
         : IConverterService
     {
         public delegate void ConverterStateChangedEvent(ConverterState state, DownloadModel? download = default);
-        public static event ConverterStateChangedEvent ConverterStateChanged;
+        public static event ConverterStateChangedEvent? ConverterStateChanged;
 
         public delegate void ConvertProgressChangedEvent(ConvertProgressModel convertProgress);
-        public static event ConvertProgressChangedEvent ConvertProgressChanged;
+        public static event ConvertProgressChangedEvent? ConvertProgressChanged;
 
         public delegate void ConvertStartedEvent(DownloadModel download);
-        public static event ConvertStartedEvent ConvertStarted;
-        private static DownloadModel Download { get; set; }
+        public static event ConvertStartedEvent? ConvertStarted;
+        private static DownloadModel? Download { get; set; }
+        private static ConverterState ConverterState { get; set; } = ConverterState.Undefined;
 
         private bool IsInitialized;
-        private CancellationToken CancellationToken { get; set; }
+
+        public static CancellationTokenSource? CTS { get; set; }
 
         public bool Init()
         {
-            CancellationToken = appLifetime.ApplicationStopping;
+            appLifetime.ApplicationStopping.Register(() =>
+            {
+                Abort();
+            });
 
             if (!File.Exists(Helper.GetFFMPEGPath()))
             {
@@ -48,6 +52,7 @@ namespace AniWorldAutoDL_Webpanel.Services
 
         private void ConverterService_ConverterStateChanged(ConverterState state, DownloadModel? download = null)
         {
+            ConverterState = state;
             logger.LogInformation($"{DateTime.Now} | {InfoMessage.ConverterChangedState} {state}");
         }
 
@@ -76,15 +81,17 @@ namespace AniWorldAutoDL_Webpanel.Services
 
             ConvertStarted?.Invoke(download);
 
-            CommandResult? result = default;
+            CTS = new CancellationTokenSource();
 
+
+            CommandResult? result = default;
             try
             {
                 result = await Cli.Wrap(binPath)
                 .WithArguments(args)
                 .WithValidation(CommandResultValidation.ZeroExitCode)
                     .WithStandardErrorPipe(PipeTarget.ToDelegate(ReadOutput, Encoding.UTF8))
-                    .ExecuteAsync(CancellationToken);
+                    .ExecuteAsync(CTS.Token);
             }
             catch (OperationCanceledException)
             {
@@ -193,13 +200,13 @@ namespace AniWorldAutoDL_Webpanel.Services
 
             string args = $"-v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 -sexagesimal \"{streamUrl}\"";
 
-            string binPath = Helper.GetFFProbePath();
+            string? binPath = Helper.GetFFProbePath();
 
             CancellationTokenSource cts = new(TimeSpan.FromSeconds(15));
 
             try
             {
-                await Cli.Wrap(binPath)
+                await Cli.Wrap(binPath!)
                 .WithArguments(args)
                     .WithValidation(CommandResultValidation.None)
                     .WithStandardOutputPipe(PipeTarget.ToStringBuilder(stdOutBuffer))
@@ -207,7 +214,7 @@ namespace AniWorldAutoDL_Webpanel.Services
             }
             catch (OperationCanceledException)
             {
-                Console.Out.WriteLine($"{DateTime.Now} | Timeout | Retry on next cycle");
+                Console.Out.WriteLine($"{DateTime.Now} | {WarningMessage.StreamDurationTimeout}");
                 return TimeSpan.Zero;
             }
             catch (Exception ex)
@@ -226,6 +233,24 @@ namespace AniWorldAutoDL_Webpanel.Services
 
 
             return TimeSpan.Parse(stdOut);
+        }
+
+        public static DownloadModel? GetDownload()
+        {
+            return Download;
+        }
+
+        public static ConverterState GetConverterState()
+        {
+            return ConverterState;
+        }
+
+        public static void Abort()
+        {
+            if(CTS is not null && !CTS.Token.IsCancellationRequested)
+            {
+                CTS.Cancel();
+            }
         }
     }
 }

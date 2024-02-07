@@ -108,6 +108,11 @@
     {
         if (firstRender)
         {
+            ConverterState = ConverterService.GetConverterState();
+
+            if (Download is null)
+                Download = ConverterService.GetDownload();
+
             ConverterService.ConvertProgressChanged += Converter_ConvertProgressChanged;
             ConverterService.ConverterStateChanged += Converter_ConverterStateChanged;
         }

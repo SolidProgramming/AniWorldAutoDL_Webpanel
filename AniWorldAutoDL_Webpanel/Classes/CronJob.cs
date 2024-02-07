@@ -29,8 +29,8 @@ namespace AniWorldAutoDL_Webpanel.Classes
 
             foreach (EpisodeDownloadModel episodeDownload in downloads)
             {
-                //if (token.IsCancellationRequested)
-                //    return;
+                if (ConverterService.CTS is not null && ConverterService.CTS.IsCancellationRequested)
+                    return;
 
                 if (string.IsNullOrEmpty(episodeDownload.Download.Name))
                     continue;
@@ -74,9 +74,6 @@ namespace AniWorldAutoDL_Webpanel.Classes
                 episodeDownload.Download.Name = $"{episodeDownload.Download.Name.GetValidFileName()}[GerDub]";
 
                 CommandResult? result = await converterService.StartDownload(m3u8Url, episodeDownload.Download, settings.DownloadPath);
-
-                //if (token.IsCancellationRequested || result?.ExitCode != 0)
-                //    continue;
             }
 
         }

@@ -1,4 +1,5 @@
 ﻿@page "/"
+@using Havit.Blazor.Components.Web
 @using Havit.Blazor.Components.Web.Bootstrap
 @using Microsoft.AspNetCore.Components.Web
 @namespace AniWorldAutoDL_Webpanel.Pages
@@ -14,8 +15,6 @@
     <!-- Default values for additional CSS Variables (+ import Bootstrap Icons) -->
     <link href="_content/Havit.Blazor.Components.Web.Bootstrap/defaults.css" rel="stylesheet" />
 
-    <!-- Blazor CSS Isolation -->
-    <link href="_content/Havit.Blazor.Components.Web.Bootstrap/bootstrap.css" rel="stylesheet" />
     <link href="css/site.css" rel="stylesheet" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -23,6 +22,16 @@
     <component type="typeof(HeadOutlet)" render-mode="ServerPrerendered" />
 </head>
 <body>
+    <script>
+        // Wait until a 'reload' button appears
+        new MutationObserver((mutations, observer) => {
+            if (document.getElementById("components-reconnect-modal")) {
+                document.getElementById('components-reconnect-modal').remove();
+                document.getElementById('ShuttingDown').classList.add("hide");
+                document.getElementById('ServerOffline').classList.remove("hide");
+            }
+        }).observe(document.body, { childList: true, subtree: true });
+    </script>
     <component type="typeof(App)" render-mode="ServerPrerendered" />
 
     <div id="blazor-error-ui">

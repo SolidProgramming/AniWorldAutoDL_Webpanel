@@ -1,4 +1,14 @@
 ﻿@attribute [Route(Routes.Shutdown)]
+@inject IHostApplicationLifetime AppLifetime
+
+<div id="ShuttingDown" class="container text-center">
+    <HxSpinner Color="ThemeColor.Warning"></HxSpinner>
+    <h1 class="mt-2" style="font-family: 'Roboto', sans-serif;">Shutting down...</h1>
+</div>
+<div id="ServerOffline" class="container text-center hide">    
+    <h1 class="text-danger" style="font-family: 'Roboto', sans-serif;">Server is offline...</h1>
+</div>
+
 
 @code {
     protected override void OnAfterRender(bool firstRender)
@@ -9,6 +19,7 @@
 
     private void StopServer()
     {
+        AppLifetime.StopApplication();
         Environment.Exit(0);
     }
 }
