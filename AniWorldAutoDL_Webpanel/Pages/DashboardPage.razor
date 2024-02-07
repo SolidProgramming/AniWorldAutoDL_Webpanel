@@ -3,6 +3,7 @@
 @inject IHxMessengerService ToastService
 @inject IApiService ApiService
 @inject NavigationManager NavigationManager
+@inject ILogger<DashboardPage> Logger
 
 <div class="container">
     <table class="table">
@@ -107,7 +108,6 @@
     {
         if (firstRender)
         {
-            ConverterService.ConvertStarted += Converter_ConvertStarted;
             ConverterService.ConvertProgressChanged += Converter_ConvertProgressChanged;
             ConverterService.ConverterStateChanged += Converter_ConverterStateChanged;
         }
@@ -120,25 +120,35 @@
         NavigationManager.NavigateTo(Routes.ConverterSettings);
     }
 
-    private void Converter_ConvertStarted(DownloadModel download)
-    {
-        Download = download;
-    }
-
     private void Converter_ConvertProgressChanged(ConvertProgressModel convertProgress)
     {
         ConvertProgress = convertProgress;
         InvokeAsync(() => StateHasChanged());
     }
 
-    private void Converter_ConverterStateChanged(ConverterState state)
+    private void Converter_ConverterStateChanged(ConverterState state, DownloadModel? download)
     {
         ConverterState = state;
 
-        if (state == ConverterState.Idle)
+        switch (state)
         {
-            Download = default;
-            ConvertProgress = default;
+            case ConverterState.Downloading:
+                if (download is null)
+                {
+                    Logger.LogWarning($"{DateTime.Now} | {WarningMessage.ConverterDownloadStateNoData}");
+                }
+                else
+                {
+                    Download = download;
+                }
+                break;
+            case ConverterState.Idle:
+                Download = default;
+                ConvertProgress = default;
+                break;
+            case ConverterState.Undefined:
+            default:
+                return;
         }
 
         InvokeAsync(() => StateHasChanged());

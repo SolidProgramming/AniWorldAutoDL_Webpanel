@@ -8,7 +8,7 @@ namespace AniWorldAutoDL_Webpanel.Services
     public class ConverterService(ILogger<ConverterService> logger) 
         : IConverterService
     {
-        public delegate void ConverterStateChangedEvent(ConverterState state);
+        public delegate void ConverterStateChangedEvent(ConverterState state, DownloadModel? download = default);
         public static event ConverterStateChangedEvent ConverterStateChanged;
 
         public delegate void ConvertProgressChangedEvent(ConvertProgressModel convertProgress);
@@ -34,11 +34,18 @@ namespace AniWorldAutoDL_Webpanel.Services
                 return false;
             }
 
+            ConverterStateChanged += ConverterService_ConverterStateChanged;
+
             IsInitialized = true;
 
             logger.LogInformation($"{DateTime.Now} | {InfoMessage.ConverterServiceInit}");
 
             return true;
+        }
+
+        private void ConverterService_ConverterStateChanged(ConverterState state, DownloadModel? download = null)
+        {
+            logger.LogInformation($"{DateTime.Now} | {InfoMessage.ConverterChangedState} {state}");
         }
 
         public async Task<CommandResult?> StartDownload(string streamUrl, DownloadModel download, string downloadPath)
@@ -49,7 +56,7 @@ namespace AniWorldAutoDL_Webpanel.Services
                 return default;
             }
 
-            ConverterStateChanged?.Invoke(ConverterState.Downloading);
+            ConverterStateChanged?.Invoke(ConverterState.Downloading, download);
 
             TimeSpan streamDuration = await GetStreamDuration(streamUrl);
 
@@ -78,11 +85,11 @@ namespace AniWorldAutoDL_Webpanel.Services
             }
             catch (OperationCanceledException)
             {
-                logger.LogWarning($"{DateTime.Now} | Download abgerochen!");
+                logger.LogWarning($"{DateTime.Now} | {WarningMessage.DownloadCanceled}");
             }
             catch (Exception ex)
             {
-                Console.Out.WriteLine($"{DateTime.Now} | {ex}");
+                logger.LogWarning($"{DateTime.Now} | {ex}");
             }
             finally
             {

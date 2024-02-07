@@ -2,6 +2,7 @@
 {
     public enum ConverterState
     {
+        Undefined,
         Idle,
         Downloading,
         Stopped

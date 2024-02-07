@@ -4,5 +4,6 @@
     {
         internal const string ConverterServiceInit = "Converter Service initialized";
         internal const string ApiServiceInit = "API Service initialized";
+        internal const string ConverterChangedState = "Converter changed state to:";
     }
 }
