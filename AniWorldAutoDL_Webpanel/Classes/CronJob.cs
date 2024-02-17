@@ -1,6 +1,4 @@
 ﻿using CliWrap;
-using Microsoft.AspNetCore.Rewrite;
-using Microsoft.Extensions.Logging;
 using Quartz;
 
 namespace AniWorldAutoDL_Webpanel.Classes
@@ -9,9 +7,19 @@ namespace AniWorldAutoDL_Webpanel.Classes
     internal class CronJob(ILogger<CronJob> logger, IApiService apiService, IConverterService converterService)
          : IJob
     {
+        public delegate void CronJobEventHandler(CronJobState jobState, int downloadCount = 0);
+        public static event CronJobEventHandler? CronJobEvent;
+
         public async Task Execute(IJobExecutionContext context)
         {
-            SettingsModel? settings = SettingsHelper.ReadSettings<SettingsModel>();            
+            await CheckForNewDownloads();
+        }
+
+        public async Task CheckForNewDownloads()
+        {
+            CronJobEvent?.Invoke(CronJobState.CheckForDownloads);
+
+            SettingsModel? settings = SettingsHelper.ReadSettings<SettingsModel>();
 
             if (settings is null || string.IsNullOrEmpty(settings.DownloadPath) || string.IsNullOrEmpty(settings.User.Username) || string.IsNullOrEmpty(settings.User.Password))
             {
@@ -46,6 +54,11 @@ namespace AniWorldAutoDL_Webpanel.Classes
             }
 
             IEnumerable<EpisodeDownloadModel>? downloads = await apiService.GetAsync<IEnumerable<EpisodeDownloadModel>?>("getDownloads", new() { { "username", settings.User.Username } });
+
+            if (downloads is not null && downloads.Any())
+            {
+                CronJobEvent?.Invoke(CronJobState.Running, downloads.Count());
+            }
 
             foreach (EpisodeDownloadModel episodeDownload in downloads)
             {
@@ -95,7 +108,7 @@ namespace AniWorldAutoDL_Webpanel.Classes
 
                 CommandResult? result = await converterService.StartDownload(m3u8Url, episodeDownload.Download, settings.DownloadPath);
 
-                if (ConverterService.CTS is not null && !ConverterService.CTS.IsCancellationRequested && (result is null || !result.IsSuccess))
+                if (ConverterService.CTS is not null && !ConverterService.CTS.IsCancellationRequested && ( result is null || !result.IsSuccess ))
                 {
                     logger.LogWarning($"{DateTime.Now} | {WarningMessage.FFMPEGExecutableFail}\n{WarningMessage.DownloadNotRemoved}");
                     continue;
@@ -116,6 +129,8 @@ namespace AniWorldAutoDL_Webpanel.Classes
                 }
             }
 
+            CronJobEvent?.Invoke(CronJobState.CheckForDownloadsComplete);
+            CronJobEvent?.Invoke(CronJobState.WaitForNextCycle);
         }
     }
 }

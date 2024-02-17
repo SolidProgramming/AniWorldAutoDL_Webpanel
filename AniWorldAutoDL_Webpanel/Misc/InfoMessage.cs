@@ -7,5 +7,6 @@
         internal const string ConverterChangedState = "Converter changed state to:";
         internal const string DownloadFinished = "Download complete.";
         internal const string DownloadDBRemoved = "Download removed from DB.";
+        internal const string CheckingForDownloads = "Auf neue Downloads prüfen...";
     }
 }

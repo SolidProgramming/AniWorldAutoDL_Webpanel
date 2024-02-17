@@ -1,6 +1,4 @@
-﻿using System.IO;
-
-namespace AniWorldAutoDL_Webpanel.Misc
+﻿namespace AniWorldAutoDL_Webpanel.Misc
 {
     internal static class Helper
     {

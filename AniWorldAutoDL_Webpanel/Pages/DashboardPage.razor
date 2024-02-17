@@ -1,9 +1,11 @@
 ﻿@attribute [Route(Routes.Dashboard)]
 @attribute [Route(Routes.Index)]
 @inject IHxMessengerService ToastService
+@inject ILogger<DashboardPage> DashboardLogger
+@inject ILogger<CronJob> CronJobLogger
 @inject IApiService ApiService
+@inject IConverterService CS
 @inject NavigationManager NavigationManager
-@inject ILogger<DashboardPage> Logger
 
 <div class="container">
     <table class="table">
@@ -14,9 +16,10 @@
                 <th scope="col" class="text-center" style="font-family: 'Roboto', sans-serif;">Staffel</th>
                 <th scope="col" class="text-center" style="font-family: 'Roboto', sans-serif;">Episode</th>
                 <th scope="col" class="text-center"></th>
-                <th scope="col" class="text-center" style="font-family: 'Roboto', sans-serif;">Progress</th>
+                <th scope="col" class="text-center" style="font-family: 'Roboto', sans-serif;">%</th>
                 <th scope="col"></th>
                 <th scope="col"></th>
+                <th scope="col" class="text-center"></th>
             </tr>
         </thead>
         <tbody>
@@ -92,6 +95,9 @@
                 <td class="text-center align-middle" width="50">
                     <HxButton Color="ThemeColor.Secondary" Icon="BootstrapIcon.PencilFill" OnClick="@MoveToConverterSettings"></HxButton>
                 </td>
+                <td class="text-center align-middle" width="50">
+                    <HxButton Spinner="CheckDownloadsButtonSpinner" Enabled="CheckDownloadsButtonEnabled" OnClick="CheckForDownloads" Color="ThemeColor.Success" Icon="BootstrapIcon.ArrowClockwise"></HxButton>
+                </td>
             </tr>
         </tbody>
     </table>
@@ -104,6 +110,10 @@
     DownloadModel? Download;
     ConverterState ConverterState = ConverterState.Idle;
 
+    CronJob? cronJob;
+    bool CheckDownloadsButtonEnabled { get; set; } = true;
+    bool CheckDownloadsButtonSpinner { get; set; } = false;
+
     protected override void OnAfterRender(bool firstRender)
     {
         if (firstRender)
@@ -112,6 +122,10 @@
 
             if (Download is null)
                 Download = ConverterService.GetDownload();
+
+            cronJob = new(CronJobLogger, ApiService, CS);
+
+            CronJob.CronJobEvent += CronJobEvent;
 
             ConverterService.ConvertProgressChanged += Converter_ConvertProgressChanged;
             ConverterService.ConverterStateChanged += Converter_ConverterStateChanged;
@@ -131,6 +145,35 @@
         InvokeAsync(() => StateHasChanged());
     }
 
+    private void CronJobEvent(CronJobState jobState, int downloadCount = 0)
+    {
+        switch (jobState)
+        {
+            case CronJobState.WaitForNextCycle:
+                CheckDownloadsButtonEnabled = true;
+                CheckDownloadsButtonSpinner = false;
+                break;
+
+            case CronJobState.Running:
+                CheckDownloadsButtonEnabled = false;
+                CheckDownloadsButtonSpinner = false;
+                break;
+
+            case CronJobState.CheckForDownloadsComplete:
+                CheckDownloadsButtonEnabled = true;
+                CheckDownloadsButtonSpinner = false;
+                break;
+
+            case CronJobState.CheckForDownloads:
+                CheckDownloadsButtonEnabled = false;
+                CheckDownloadsButtonSpinner = true;
+                ToastService.AddInformation(InfoMessage.CheckingForDownloads);
+                break;
+            default:
+                break;
+        }
+    }
+
     private void Converter_ConverterStateChanged(ConverterState state, DownloadModel? download)
     {
         ConverterState = state;
@@ -140,7 +183,7 @@
             case ConverterState.Downloading:
                 if (download is null)
                 {
-                    Logger.LogWarning($"{DateTime.Now} | {WarningMessage.ConverterDownloadStateNoData}");
+                    DashboardLogger.LogWarning($"{DateTime.Now} | {WarningMessage.ConverterDownloadStateNoData}");
                 }
                 else
                 {
@@ -157,5 +200,13 @@
         }
 
         InvokeAsync(() => StateHasChanged());
+    }
+
+    private async Task CheckForDownloads()
+    {
+        if (cronJob is null)
+            return;
+
+        await cronJob.CheckForNewDownloads();
     }
 }

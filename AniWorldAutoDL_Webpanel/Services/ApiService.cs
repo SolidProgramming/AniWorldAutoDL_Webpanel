@@ -3,7 +3,6 @@ using Newtonsoft.Json;
 using System.Net.Http.Headers;
 using System.Net;
 using System.Text;
-using AniWorldAutoDL_Webpanel.Interfaces;
 
 namespace AniWorldAutoDL_Webpanel.Services
 {
