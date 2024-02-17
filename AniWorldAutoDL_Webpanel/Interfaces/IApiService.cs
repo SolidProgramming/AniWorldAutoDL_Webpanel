@@ -4,6 +4,7 @@
     {
         bool Init();
         Task<bool> Login(string username, string password);
+        Task<bool> RemoveFinishedDownload(string downloadId);
         Task<T?> GetAsync<T>(string uri);
         Task<T?> GetAsync<T>(string uri, Dictionary<string, string> queryData, object body);
         Task<T?> GetAsync<T>(string uri, Dictionary<string, string> queryData);

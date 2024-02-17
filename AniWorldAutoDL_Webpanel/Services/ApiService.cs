@@ -57,12 +57,15 @@ namespace AniWorldAutoDL_Webpanel.Services
 
             return true;
         }
+        public async Task<bool> RemoveFinishedDownload(string downloadId)
+        {
+            return await PostAsync<bool>("removeFinishedDownload", downloadId);
+        }
         public async Task<T?> GetAsync<T>(string uri)
         {
             HttpRequestMessage request = new(HttpMethod.Get, uri);
             return await SendRequest<T>(request);
         }
-
         public async Task<T?> GetAsync<T>(string uri, Dictionary<string, string> queryData, object body)
         {
             HttpRequestMessage request = new(HttpMethod.Get, new Uri(QueryHelpers.AddQueryString(httpClient.BaseAddress + uri, queryData!)))
@@ -76,7 +79,6 @@ namespace AniWorldAutoDL_Webpanel.Services
             HttpRequestMessage request = new(HttpMethod.Get, new Uri(QueryHelpers.AddQueryString(httpClient.BaseAddress + uri, queryData!)));
             return await SendRequest<T>(request);
         }
-
         public async Task<T?> PostAsync<T>(string uri, object value)
         {
             HttpRequestMessage request = new(HttpMethod.Post, uri)
@@ -85,7 +87,6 @@ namespace AniWorldAutoDL_Webpanel.Services
             };
             return await SendRequest<T>(request);
         }
-
         public async Task<bool> PostAsync(string uri, object value)
         {
             HttpRequestMessage request = new(HttpMethod.Post, uri)
@@ -94,7 +95,6 @@ namespace AniWorldAutoDL_Webpanel.Services
             };
             return await SendRequest<bool>(request);
         }
-
         private async Task<T?> SendRequest<T>(HttpRequestMessage request)
         {
             if (!IsInitialized)
@@ -127,6 +127,6 @@ namespace AniWorldAutoDL_Webpanel.Services
             }
 
             return JsonConvert.DeserializeObject<T>(await response.Content.ReadAsStringAsync());
-        }
+        }       
     }
 }

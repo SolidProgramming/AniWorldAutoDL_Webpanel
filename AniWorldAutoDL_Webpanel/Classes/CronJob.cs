@@ -1,4 +1,6 @@
 ﻿using CliWrap;
+using Microsoft.AspNetCore.Rewrite;
+using Microsoft.Extensions.Logging;
 using Quartz;
 
 namespace AniWorldAutoDL_Webpanel.Classes
@@ -92,6 +94,26 @@ namespace AniWorldAutoDL_Webpanel.Classes
                 episodeDownload.Download.Name = $"{episodeDownload.Download.Name.GetValidFileName()}[GerDub]";
 
                 CommandResult? result = await converterService.StartDownload(m3u8Url, episodeDownload.Download, settings.DownloadPath);
+
+                if (ConverterService.CTS is not null && !ConverterService.CTS.IsCancellationRequested && (result is null || !result.IsSuccess))
+                {
+                    logger.LogWarning($"{DateTime.Now} | {WarningMessage.FFMPEGExecutableFail}\n{WarningMessage.DownloadNotRemoved}");
+                    continue;
+                }
+
+                if (result is not null && result.IsSuccess)
+                {
+                    bool removeSuccess = await apiService.RemoveFinishedDownload(episodeDownload.Download.Id.ToString());
+
+                    if (removeSuccess)
+                    {
+                        logger.LogInformation($"{DateTime.Now} | {InfoMessage.DownloadFinished} {InfoMessage.DownloadDBRemoved}");
+                    }
+                    else
+                    {
+                        logger.LogWarning($"{DateTime.Now} | {WarningMessage.DownloadNotRemoved}");
+                    }
+                }
             }
 
         }
