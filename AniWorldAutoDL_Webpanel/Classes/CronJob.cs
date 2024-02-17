@@ -94,9 +94,9 @@ namespace AniWorldAutoDL_Webpanel.Classes
 
             while (downloadQue.Count != 0)
             {
-                CronJobEvent?.Invoke(CronJobState.Running, downloadQue.Count);
-
                 EpisodeDownloadModel episodeDownload = downloadQue.Dequeue();
+
+                CronJobEvent?.Invoke(CronJobState.Running, downloadQue.Count);
 
                 if (ConverterService.CTS is not null && ConverterService.CTS.IsCancellationRequested)
                 {
