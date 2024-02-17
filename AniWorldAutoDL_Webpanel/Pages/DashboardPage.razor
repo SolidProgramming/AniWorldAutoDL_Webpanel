@@ -172,6 +172,7 @@
             CheckCronJobState();
 
             CronJob.CronJobEvent += CronJobEvent;
+            CronJob.CronJobErrorEvent += CronJobErrorEvent;
 
             ConverterService.ConvertProgressChanged += Converter_ConvertProgressChanged;
             ConverterService.ConverterStateChanged += Converter_ConverterStateChanged;
@@ -198,13 +199,16 @@
 
     private void RefreshCycleTime(Object? source, System.Timers.ElapsedEventArgs e)
     {
-        if (NextCronJobCycle < DateTime.Now)
+        NextCronJobCycle = CronJob.NextRun.Value;
+        NextCronJobCyleTime = TimeOnly.FromDateTime(NextCronJobCycle.Value);
+
+        if (NextCronJobCycle < DateTime.Now.ToLocalTime())
         {
             TimeUntilCycle = new TimeSpan(0, 0, 0);
         }
         else
         {
-            TimeUntilCycle = NextCronJobCycle?.Subtract(DateTime.Now);
+            TimeUntilCycle = NextCronJobCycle?.Subtract(DateTime.Now.ToLocalTime());
         }
 
         TimeUntilCycleText = "";
@@ -216,12 +220,12 @@
 
         if (TimeUntilCycle?.Minutes > 0)
         {
-            TimeUntilCycleText += $"{TimeUntilCycle:mm} Minuten";
+            TimeUntilCycleText += $" {TimeUntilCycle:mm} Minuten";
         }
 
         if (TimeUntilCycle?.Seconds > 0)
         {
-            TimeUntilCycleText += $"{TimeUntilCycle:ss} Sekunden";
+            TimeUntilCycleText += $" {TimeUntilCycle:ss} Sekunden";
         }
 
         InvokeAsync(() => StateHasChanged());
@@ -250,9 +254,28 @@
         if (CronJob.NextRun is null)
             return;
 
-        NextCronJobCycle = CronJob.NextRun.Value;
-        NextCronJobCyleTime = TimeOnly.FromDateTime(NextCronJobCycle.Value);
         HandleCronJobState(jobState);
+    }
+
+    private void CronJobErrorEvent(Severity severity, string message)
+    {
+        switch (severity)
+        {
+            case Severity.Information:
+                ToastService.AddMessage(message, 3000, ThemeColor.Info);
+                //logger.LogInformation($"{DateTime.Now} | {message}");
+                break;
+            case Severity.Warning:
+                ToastService.AddMessage(message, 5000, ThemeColor.Warning);
+                //logger.LogWarning($"{DateTime.Now} | {message}");
+                break;
+            case Severity.Error:
+                ToastService.AddMessage(message, 8000, ThemeColor.Danger);
+                //logger.LogError($"{DateTime.Now} | {message}");
+                break;
+            default:
+                break;
+        }
     }
 
     private void HandleCronJobState(CronJobState jobState)

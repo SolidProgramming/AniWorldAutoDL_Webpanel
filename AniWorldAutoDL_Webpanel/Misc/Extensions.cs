@@ -23,9 +23,12 @@ namespace AniWorldAutoDL_Webpanel.Misc
                 .WithIdentity(jobName + "-trigger")
                 .WithSimpleSchedule(_ =>
                     _.WithIntervalInMinutes(intervalInMinutes)
-                    .RepeatForever()));
+                    .RepeatForever())
+                .StartAt(new DateTimeOffset(DateTime.Now.ToLocalTime())
+                    .AddSeconds(10)));
 
             CronJob.Interval = intervalInMinutes;
+            CronJob.NextRun = DateTime.Now.ToLocalTime().AddSeconds(10);
         }
 
         private static Dictionary<Language, string> VOELanguageKeyCollection = new()

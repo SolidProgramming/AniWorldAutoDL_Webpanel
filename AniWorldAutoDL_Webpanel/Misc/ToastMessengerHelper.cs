@@ -14,7 +14,8 @@ namespace AniWorldAutoDL_Webpanel.Misc
             {
                 Color = themeColor,
                 AutohideDelay = autoHideDelay,
-                ContentTemplate = BuildContentTemplate("", InfoMessage.CheckingForDownloads)
+                ContentTemplate = BuildContentTemplate("", message),
+                CssClass = "mb-2"
             };
 
             messenger.AddMessage(toast);

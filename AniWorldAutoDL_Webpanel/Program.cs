@@ -8,7 +8,6 @@ using Quartz;
 using Havit.Blazor.Components.Web;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
-using System.Timers;
 
 if (AnotherInstanceExists())
 {

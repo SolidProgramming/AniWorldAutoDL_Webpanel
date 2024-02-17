@@ -1,5 +1,7 @@
 ﻿using CliWrap;
+using Microsoft.Extensions.Primitives;
 using Quartz;
+using Telegram.Bot.Types;
 
 namespace AniWorldAutoDL_Webpanel.Classes
 {
@@ -9,6 +11,9 @@ namespace AniWorldAutoDL_Webpanel.Classes
     {
         public delegate void CronJobEventHandler(CronJobState jobState, int downloadCount = 0);
         public static event CronJobEventHandler? CronJobEvent;
+
+        public delegate void CronJobErrorEventHandler(Severity severity, string message);
+        public static event CronJobErrorEventHandler? CronJobErrorEvent;
 
         private static CronJobState CronJobState { get; set; } = CronJobState.WaitForNextCycle;
 
@@ -23,7 +28,7 @@ namespace AniWorldAutoDL_Webpanel.Classes
 
         public async Task Execute(IJobExecutionContext context)
         {
-            NextRun = context!.NextFireTimeUtc!.Value.DateTime.ToLocalTime();
+            NextRun = context!.NextFireTimeUtc!.Value.ToLocalTime().DateTime;
             await CheckForNewDownloads();
         }
 
@@ -36,11 +41,16 @@ namespace AniWorldAutoDL_Webpanel.Classes
 
             CronJobEvent?.Invoke(CronJobState.CheckForDownloads);
 
+            string errorMessage = $"{DateTime.Now} | ";
+
             SettingsModel? settings = SettingsHelper.ReadSettings<SettingsModel>();
 
             if (settings is null || string.IsNullOrEmpty(settings.DownloadPath) || string.IsNullOrEmpty(settings.User.Username) || string.IsNullOrEmpty(settings.User.Password))
             {
-                logger.LogError($"{DateTime.Now} | {ErrorMessage.ReadSettings}");
+                errorMessage += ErrorMessage.ReadSettings;
+
+                logger.LogError(errorMessage);
+                CronJobErrorEvent?.Invoke(Severity.Error, errorMessage);
                 return;
             }
 
@@ -52,13 +62,19 @@ namespace AniWorldAutoDL_Webpanel.Classes
 
             if (!hosterReachableSTO)
             {
-                logger.LogError($"{DateTime.Now} | {sto.Hoster} {ErrorMessage.HosterUnavailable}");
+                errorMessage += $"{sto.Hoster} {ErrorMessage.HosterUnavailable}";
+
+                logger.LogError(errorMessage);
+                CronJobErrorEvent?.Invoke(Severity.Error, errorMessage);
                 return;
             }
 
             if (!hosterReachableAniworld)
             {
-                logger.LogError($"{DateTime.Now} | {aniworld.Hoster} {ErrorMessage.HosterUnavailable}");
+                errorMessage += $"{aniworld.Hoster} {ErrorMessage.HosterUnavailable}";
+
+                logger.LogError(errorMessage);
+                CronJobErrorEvent?.Invoke(Severity.Error, errorMessage);
                 return;
             }
 
