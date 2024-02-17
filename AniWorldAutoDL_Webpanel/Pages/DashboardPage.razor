@@ -262,16 +262,16 @@
         switch (severity)
         {
             case Severity.Information:
-                ToastService.AddMessage(message, 3000, ThemeColor.Info);
-                //logger.LogInformation($"{DateTime.Now} | {message}");
+                CronJobLogger.LogInformation(message);
+                ToastService.AddMessage(message, 3000, ThemeColor.Info);                
                 break;
             case Severity.Warning:
+                CronJobLogger.LogWarning(message);
                 ToastService.AddMessage(message, 5000, ThemeColor.Warning);
-                //logger.LogWarning($"{DateTime.Now} | {message}");
                 break;
             case Severity.Error:
+                CronJobLogger.LogError(message);
                 ToastService.AddMessage(message, 8000, ThemeColor.Danger);
-                //logger.LogError($"{DateTime.Now} | {message}");
                 break;
             default:
                 break;

@@ -80,10 +80,7 @@ namespace AniWorldAutoDL_Webpanel.Services
             string binPath = Helper.GetFFMPEGPath();
 
             ConvertStarted?.Invoke(download);
-
-            CTS = new CancellationTokenSource();
-
-
+                        
             CommandResult? result = default;
             try
             {

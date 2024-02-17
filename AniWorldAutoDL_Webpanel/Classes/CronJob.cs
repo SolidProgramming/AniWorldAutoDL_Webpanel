@@ -1,4 +1,5 @@
-﻿using CliWrap;
+﻿using AniWorldAutoDL_Webpanel.Misc;
+using CliWrap;
 using Microsoft.Extensions.Primitives;
 using Quartz;
 using Telegram.Bot.Types;
@@ -41,16 +42,16 @@ namespace AniWorldAutoDL_Webpanel.Classes
 
             CronJobEvent?.Invoke(CronJobState.CheckForDownloads);
 
-            string errorMessage = $"{DateTime.Now} | ";
+            string logMessage = $"{DateTime.Now} | ";
 
             SettingsModel? settings = SettingsHelper.ReadSettings<SettingsModel>();
 
             if (settings is null || string.IsNullOrEmpty(settings.DownloadPath) || string.IsNullOrEmpty(settings.User.Username) || string.IsNullOrEmpty(settings.User.Password))
             {
-                errorMessage += ErrorMessage.ReadSettings;
+                logMessage += ErrorMessage.ReadSettings;
 
-                logger.LogError(errorMessage);
-                CronJobErrorEvent?.Invoke(Severity.Error, errorMessage);
+                logger.LogError(logMessage);
+                CronJobErrorEvent?.Invoke(Severity.Error, logMessage);
                 return;
             }
 
@@ -62,19 +63,15 @@ namespace AniWorldAutoDL_Webpanel.Classes
 
             if (!hosterReachableSTO)
             {
-                errorMessage += $"{sto.Hoster} {ErrorMessage.HosterUnavailable}";
-
-                logger.LogError(errorMessage);
-                CronJobErrorEvent?.Invoke(Severity.Error, errorMessage);
+                logMessage += $"{sto.Host} {ErrorMessage.HosterUnavailable}";
+                CronJobErrorEvent?.Invoke(Severity.Error, logMessage);
                 return;
             }
 
             if (!hosterReachableAniworld)
             {
-                errorMessage += $"{aniworld.Hoster} {ErrorMessage.HosterUnavailable}";
-
-                logger.LogError(errorMessage);
-                CronJobErrorEvent?.Invoke(Severity.Error, errorMessage);
+                logMessage += $"{aniworld.Host} {ErrorMessage.HosterUnavailable}";
+                CronJobErrorEvent?.Invoke(Severity.Error, logMessage);
                 return;
             }
 
@@ -82,7 +79,8 @@ namespace AniWorldAutoDL_Webpanel.Classes
 
             if (!loginSuccess)
             {
-                logger.LogError($"{DateTime.Now} | {ErrorMessage.WrongCredentials}");
+                logMessage += ErrorMessage.WrongCredentials;
+                CronJobErrorEvent?.Invoke(Severity.Error, logMessage);
                 return;
             }
 
@@ -91,12 +89,16 @@ namespace AniWorldAutoDL_Webpanel.Classes
             if (downloads is not null && downloads.Any())
             {
                 CronJobEvent?.Invoke(CronJobState.Running, downloads.Count());
+                ConverterService.CTS = new CancellationTokenSource();
             }
 
             foreach (EpisodeDownloadModel episodeDownload in downloads)
             {
                 if (ConverterService.CTS is not null && ConverterService.CTS.IsCancellationRequested)
+                {
+                    CronJobEvent?.Invoke(CronJobState.WaitForNextCycle);
                     return;
+                }                    
 
                 if (string.IsNullOrEmpty(episodeDownload.Download.Name))
                     continue;
@@ -145,11 +147,13 @@ namespace AniWorldAutoDL_Webpanel.Classes
                 {
                     if (ConverterService.CTS.IsCancellationRequested)
                     {
-                        logger.LogWarning($"{DateTime.Now} | {WarningMessage.DownloadNotRemoved}");
+                        logMessage += WarningMessage.DownloadNotRemoved;
+                        CronJobErrorEvent?.Invoke(Severity.Warning, logMessage);
                     }
                     else
                     {
-                        logger.LogWarning($"{DateTime.Now} | {WarningMessage.FFMPEGExecutableFail}\n{WarningMessage.DownloadNotRemoved}");
+                        logMessage += $"{WarningMessage.FFMPEGExecutableFail}\n{WarningMessage.DownloadNotRemoved}";
+                        CronJobErrorEvent?.Invoke(Severity.Warning, logMessage);
                     }
                 }
                 
@@ -159,11 +163,13 @@ namespace AniWorldAutoDL_Webpanel.Classes
 
                     if (removeSuccess)
                     {
-                        logger.LogInformation($"{DateTime.Now} | {InfoMessage.DownloadFinished} {InfoMessage.DownloadDBRemoved}");
+                        logMessage += $"{InfoMessage.DownloadFinished} {InfoMessage.DownloadDBRemoved}";                       
+                        CronJobErrorEvent?.Invoke(Severity.Information, logMessage);
                     }
                     else
                     {
-                        logger.LogWarning($"{DateTime.Now} | {WarningMessage.DownloadNotRemoved}");
+                        logMessage += WarningMessage.DownloadNotRemoved;
+                        CronJobErrorEvent?.Invoke(Severity.Warning, logMessage);
                     }
                 }
             }

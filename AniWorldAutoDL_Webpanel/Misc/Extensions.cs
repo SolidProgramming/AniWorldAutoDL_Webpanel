@@ -8,6 +8,9 @@ namespace AniWorldAutoDL_Webpanel.Misc
     {
         internal static void AddJobAndTrigger<T>(this IServiceCollectionQuartzConfigurator quartz, int intervalInMinutes) where T : IJob
         {
+            DateTimeOffset startTime = new DateTimeOffset(DateTime.Now.ToLocalTime())
+                                                .AddSeconds(10);
+
             // Use the name of the IJob as the appsettings.json key
             string jobName = typeof(T).Name;
 
@@ -24,11 +27,10 @@ namespace AniWorldAutoDL_Webpanel.Misc
                 .WithSimpleSchedule(_ =>
                     _.WithIntervalInMinutes(intervalInMinutes)
                     .RepeatForever())
-                .StartAt(new DateTimeOffset(DateTime.Now.ToLocalTime())
-                    .AddSeconds(10)));
+                .StartAt(startTime));
 
-            CronJob.Interval = intervalInMinutes;
-            CronJob.NextRun = DateTime.Now.ToLocalTime().AddSeconds(10);
+            CronJob.NextRun = startTime.DateTime;
+            CronJob.Interval = intervalInMinutes;            
         }
 
         private static Dictionary<Language, string> VOELanguageKeyCollection = new()
