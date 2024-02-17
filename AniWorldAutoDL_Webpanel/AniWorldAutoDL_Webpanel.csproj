@@ -9,6 +9,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Content Remove="settings.json" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="CliWrap" Version="3.6.6" />
     <PackageReference Include="Havit.Blazor.Components.Web.Bootstrap" Version="4.5.5" />
     <PackageReference Include="HtmlAgilityPack" Version="1.11.58" />
@@ -19,12 +23,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="appdata\Binaries\ffmpeg.exe">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="appdata\Binaries\ffprobe.exe">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
     <None Update="Binaries\ffmpeg.exe">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
@@ -34,7 +32,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="appdata\Binaries\" />
+    <None Include="settings.json">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>

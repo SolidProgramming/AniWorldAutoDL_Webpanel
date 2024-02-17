@@ -17,7 +17,7 @@ if (AnotherInstanceExists())
 
 WebApplicationBuilder? builder = WebApplication.CreateBuilder(args);
 
-builder.WebHost.UseUrls("http://localhost:5080", "https://localhost:5443");
+builder.WebHost.UseUrls("http://localhost:5080");
 
 builder.Services.AddHsts(_ =>
 {
@@ -63,9 +63,9 @@ apiService.Init();
 IConverterService converterService = app.Services.GetRequiredService<IConverterService>();
 converterService.Init();
 
-OpenBrowser("https://localhost:5443");
+OpenBrowser("http://localhost:5080");
 
-await app.RunAsync();
+app.Run();
 
 static void OpenBrowser(string url)
 {

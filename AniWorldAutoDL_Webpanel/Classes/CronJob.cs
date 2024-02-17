@@ -17,6 +17,24 @@ namespace AniWorldAutoDL_Webpanel.Classes
                 return;
             }
 
+            HosterModel? sto = HosterHelper.GetHosterByEnum(Hoster.STO);
+            HosterModel? aniworld = HosterHelper.GetHosterByEnum(Hoster.AniWorld);
+
+            bool hosterReachableSTO = await HosterHelper.HosterReachable(sto);
+            bool hosterReachableAniworld = await HosterHelper.HosterReachable(aniworld);
+
+            if (!hosterReachableSTO)
+            {
+                logger.LogError($"{DateTime.Now} | {sto.Hoster} {ErrorMessage.HosterUnavailable}");
+                return;
+            }
+
+            if (!hosterReachableAniworld)
+            {
+                logger.LogError($"{DateTime.Now} | {aniworld.Hoster} {ErrorMessage.HosterUnavailable}");
+                return;
+            }
+
             bool loginSuccess = await apiService.Login(settings.User.Username, settings.User.Password);
 
             if (!loginSuccess)
