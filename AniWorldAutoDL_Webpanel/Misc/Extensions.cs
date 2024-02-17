@@ -8,9 +8,6 @@ namespace AniWorldAutoDL_Webpanel.Misc
     {
         internal static void AddJobAndTrigger<T>(this IServiceCollectionQuartzConfigurator quartz, int intervalInMinutes) where T : IJob
         {
-            DateTimeOffset startTime = new DateTimeOffset(DateTime.Now.ToLocalTime())
-                                                .AddSeconds(10);
-
             // Use the name of the IJob as the appsettings.json key
             string jobName = typeof(T).Name;
 
@@ -20,6 +17,9 @@ namespace AniWorldAutoDL_Webpanel.Misc
             // register the job as before
             JobKey? jobKey = new(jobName);
             quartz.AddJob<T>(opts => opts.WithIdentity(jobKey));
+
+            DateTimeOffset startTime = new DateTimeOffset(DateTime.Now.ToLocalTime())
+                                                .AddSeconds(15);
 
             quartz.AddTrigger(opts => opts
                 .ForJob(jobKey)

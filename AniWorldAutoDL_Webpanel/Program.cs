@@ -30,16 +30,16 @@ builder.Services.AddServerSideBlazor();
 
 builder.Services.AddHttpClient<IApiService, ApiService>();
 
-builder.Services.AddQuartz(_ =>
-{
-    _.AddJobAndTrigger<CronJob>(1);
-});
+//builder.Services.AddQuartz(_ =>
+//{
+//    _.AddJobAndTrigger<CronJob>(5);
+//});
 
-builder.Services.AddQuartzHostedService(_ =>
-{
-    _.WaitForJobsToComplete = true;
-    _.AwaitApplicationStarted = true;
-});
+//builder.Services.AddQuartzHostedService(_ =>
+//{
+//    _.WaitForJobsToComplete = true;
+//    _.AwaitApplicationStarted = true;
+//});
 
 builder.Services.AddSingleton<IApiService, ApiService>();
 builder.Services.AddSingleton<IConverterService, ConverterService>();

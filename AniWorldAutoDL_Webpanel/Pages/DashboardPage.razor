@@ -112,50 +112,64 @@
         </tbody>
     </table>
     <div class="container">
-        <p class="" style="float: right !important;">
-            Nächste Prüfung:
-            @if (NextCronJobCycle is not null)
-            {
-                <b>
-                    <span>
-                        @($"{NextCronJobCyleTime}")
-                    </span>
-                    @if (!string.IsNullOrEmpty(TimeUntilCycleText))
+        <div class="row">
+            <div class="col d-flex justify-content-start">
+                <span>
+                    Warteschlange:
+                    <h5 class="d-inline">
+                        <HxBadge Type="BadgeType.RoundedPill" CssClass="mx-2" Color="ThemeColor.Success">@DownloadQueCount</HxBadge>
+                    </h5>
+                </span>
+            </div>
+            <div class="col d-flex justify-content-end">
+                <p>
+                    Nächste Prüfung:
+                    @if (NextCronJobCycle is not null)
                     {
-                        <span>@($" (in {TimeUntilCycleText})")</span>
+                        <b>
+                            <span>
+                                @($"{NextCronJobCyleTime}")
+                            </span>
+                            @if (!string.IsNullOrEmpty(TimeUntilCycleText))
+                            {
+                                <span>@($" (in {TimeUntilCycleText})")</span>
+                            }
+                        </b>
                     }
-                </b>
-            }
-            else
-            {
-                <HxIcon Icon="BootstrapIcon.Dash"></HxIcon>
-            }
-        </p>
+                    else
+                    {
+                        <HxIcon Icon="BootstrapIcon.Dash"></HxIcon>
+                    }
+                </p>
+            </div>
+        </div>
     </div>
 </div>
 
 
 
 @code {
-    ConvertProgressModel? ConvertProgress;
-    DownloadModel? Download;
-    ConverterState ConverterState = ConverterState.Idle;
-    CronJobState CronJobState = CronJobState.WaitForNextCycle;
+    private ConvertProgressModel? ConvertProgress;
+    private DownloadModel? Download;
+    private ConverterState ConverterState = ConverterState.Idle;
+    private CronJobState CronJobState = CronJobState.WaitForNextCycle;
 
-    CronJob? CronJob;
+    private CronJob? CronJob;
 
-    bool CheckDownloadsButtonEnabled { get; set; } = true;
-    bool CheckDownloadsButtonSpinner { get; set; } = false;
+    private bool CheckDownloadsButtonEnabled { get; set; } = true;
+    private bool CheckDownloadsButtonSpinner { get; set; } = false;
 
-    bool EditConverterSettingsButtonEnabled { get; set; } = true;
+    private bool EditConverterSettingsButtonEnabled { get; set; } = true;
 
-    bool StopConverterButtonEnabled { get; set; } = false;
+    private bool StopConverterButtonEnabled { get; set; } = false;
 
-    DateTime? NextCronJobCycle = default;
-    TimeOnly NextCronJobCyleTime;
-    System.Timers.Timer? TmNextCycle;
-    TimeSpan? TimeUntilCycle;
-    string? TimeUntilCycleText;
+    private DateTime? NextCronJobCycle = default;
+    private TimeOnly NextCronJobCyleTime;
+    private System.Timers.Timer? TmNextCycle;
+    private TimeSpan? TimeUntilCycle;
+    private string? TimeUntilCycleText;
+
+    private int DownloadQueCount;
 
     protected override void OnAfterRender(bool firstRender)
     {
@@ -199,6 +213,9 @@
 
     private void RefreshCycleTime(Object? source, System.Timers.ElapsedEventArgs e)
     {
+        if (CronJob.NextRun is null)
+            return;
+
         NextCronJobCycle = CronJob.NextRun.Value;
         NextCronJobCyleTime = TimeOnly.FromDateTime(NextCronJobCycle.Value);
 
@@ -254,6 +271,11 @@
         if (CronJob.NextRun is null)
             return;
 
+        if (jobState == CronJobState.Running)
+        {
+            DownloadQueCount = downloadCount;
+        }
+
         HandleCronJobState(jobState);
     }
 
@@ -263,7 +285,7 @@
         {
             case Severity.Information:
                 CronJobLogger.LogInformation(message);
-                ToastService.AddMessage(message, 3000, ThemeColor.Info);                
+                ToastService.AddMessage(message, 3000, ThemeColor.Info);
                 break;
             case Severity.Warning:
                 CronJobLogger.LogWarning(message);

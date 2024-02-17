@@ -1,8 +1,7 @@
-﻿using AniWorldAutoDL_Webpanel.Misc;
-using CliWrap;
-using Microsoft.Extensions.Primitives;
+﻿using CliWrap;
 using Quartz;
-using Telegram.Bot.Types;
+using System.Linq;
+
 
 namespace AniWorldAutoDL_Webpanel.Classes
 {
@@ -85,25 +84,31 @@ namespace AniWorldAutoDL_Webpanel.Classes
             }
 
             IEnumerable<EpisodeDownloadModel>? downloads = await apiService.GetAsync<IEnumerable<EpisodeDownloadModel>?>("getDownloads", new() { { "username", settings.User.Username } });
+            Queue<EpisodeDownloadModel> downloadQue = new();
 
             if (downloads is not null && downloads.Any())
             {
-                CronJobEvent?.Invoke(CronJobState.Running, downloads.Count());
+                downloads.ToList().ForEach(downloadQue.Enqueue);                
                 ConverterService.CTS = new CancellationTokenSource();
             }
 
-            foreach (EpisodeDownloadModel episodeDownload in downloads)
+            while (downloadQue.Count != 0)
             {
+                CronJobEvent?.Invoke(CronJobState.Running, downloadQue.Count);
+
+                EpisodeDownloadModel episodeDownload = downloadQue.Dequeue();
+
                 if (ConverterService.CTS is not null && ConverterService.CTS.IsCancellationRequested)
                 {
                     CronJobEvent?.Invoke(CronJobState.WaitForNextCycle);
                     return;
-                }                    
+                }
 
                 if (string.IsNullOrEmpty(episodeDownload.Download.Name))
                     continue;
 
                 string url = "";
+                logMessage = $"{DateTime.Now} | ";
 
                 if (episodeDownload.StreamingPortal.Name == "S.TO")
                 {
@@ -156,14 +161,14 @@ namespace AniWorldAutoDL_Webpanel.Classes
                         CronJobErrorEvent?.Invoke(Severity.Warning, logMessage);
                     }
                 }
-                
+
                 if (result is not null && result.IsSuccess)
                 {
                     bool removeSuccess = await apiService.RemoveFinishedDownload(episodeDownload.Download.Id.ToString());
 
                     if (removeSuccess)
                     {
-                        logMessage += $"{InfoMessage.DownloadFinished} {InfoMessage.DownloadDBRemoved}";                       
+                        logMessage += $"{InfoMessage.DownloadFinished} {InfoMessage.DownloadDBRemoved}";
                         CronJobErrorEvent?.Invoke(Severity.Information, logMessage);
                     }
                     else

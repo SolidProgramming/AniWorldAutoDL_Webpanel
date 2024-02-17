@@ -1,5 +1,6 @@
 ﻿@attribute [Route(Routes.Shutdown)]
 @inject IHostApplicationLifetime AppLifetime
+@inject IJSRuntime JS
 
 <div id="ShuttingDown" class="container text-center">
     <HxSpinner Color="ThemeColor.Warning"></HxSpinner>
@@ -13,6 +14,8 @@
 @code {
     protected override void OnAfterRender(bool firstRender)
     {
+        JS.InvokeVoidAsync("setShutdown");
+
         StopServer();
         base.OnAfterRender(firstRender);
     }

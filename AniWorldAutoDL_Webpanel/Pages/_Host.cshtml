@@ -2,6 +2,7 @@
 @using Havit.Blazor.Components.Web
 @using Havit.Blazor.Components.Web.Bootstrap
 @using Microsoft.AspNetCore.Components.Web
+@inject IHostApplicationLifetime AppLifetime
 @namespace AniWorldAutoDL_Webpanel.Pages
 @addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
 
@@ -19,16 +20,49 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
+    <style>
+        #components-reconnect-modal > h5 {
+            color: #ffc107;
+        }
+
+        #components-reconnect-modal {
+            background-color: #141C23 !important;
+        }
+
+        #components-reconnect-modal > div {
+                background-color: #0D1620 !important;
+                border-color: #ffc107 rgb(243, 243, 243) rgb(243, 243, 243) !important;
+        }
+    </style>
     <component type="typeof(HeadOutlet)" render-mode="ServerPrerendered" />
 </head>
 <body>
+
     <script>
+        var isShuttingDown = false;
+        var reconnectH5Set = false;
+        var reconnectText = "Die Verbindung zum Server ist abgebrochen.";
+
+        function setShutdown() {
+            isShuttingDown = true;
+        }
         // Wait until a 'reload' button appears
         new MutationObserver((mutations, observer) => {
-            if (document.getElementById("components-reconnect-modal")) {
-                document.getElementById('components-reconnect-modal').remove();
-                document.getElementById('ShuttingDown').classList.add("hide");
-                document.getElementById('ServerOffline').classList.remove("hide");
+
+            var reconnectElement = document.getElementById("components-reconnect-modal");
+
+            if (reconnectElement) {
+                if (isShuttingDown) {
+                    reconnectElement.remove();
+                    document.getElementById('ShuttingDown').classList.add("hide");
+                    document.getElementById('ServerOffline').classList.remove("hide");
+                }
+
+                var h5Element = document.querySelector("#components-reconnect-modal > h5");
+
+                if (h5Element && h5Element.innerHTML != reconnectText) {
+                    h5Element.innerHTML = reconnectText;
+                }
             }
         }).observe(document.body, { childList: true, subtree: true });
     </script>
