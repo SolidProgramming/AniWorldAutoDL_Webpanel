@@ -8,6 +8,7 @@ using Quartz;
 using Havit.Blazor.Components.Web;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using System.Timers;
 
 if (AnotherInstanceExists())
 {
@@ -32,7 +33,7 @@ builder.Services.AddHttpClient<IApiService, ApiService>();
 
 builder.Services.AddQuartz(_ =>
 {
-    _.AddJobAndTrigger<CronJob>(15);
+    _.AddJobAndTrigger<CronJob>(1);
 });
 
 builder.Services.AddQuartzHostedService(_ =>
@@ -57,11 +58,11 @@ app.UseRouting();
 app.MapBlazorHub();
 app.MapFallbackToPage("/_Host");
 
-IApiService apiService = app.Services.GetRequiredService<IApiService>();
-apiService.Init();
-
 IConverterService converterService = app.Services.GetRequiredService<IConverterService>();
 converterService.Init();
+
+IApiService apiService = app.Services.GetRequiredService<IApiService>();
+apiService.Init();
 
 OpenBrowser("http://localhost:5080");
 

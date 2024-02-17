@@ -4,7 +4,6 @@
     {
         WaitForNextCycle,
         CheckForDownloads,
-        CheckForDownloadsComplete,
         Running
     }
 }

@@ -10,13 +10,30 @@ namespace AniWorldAutoDL_Webpanel.Classes
         public delegate void CronJobEventHandler(CronJobState jobState, int downloadCount = 0);
         public static event CronJobEventHandler? CronJobEvent;
 
+        private static CronJobState CronJobState { get; set; } = CronJobState.WaitForNextCycle;
+
+        public static int Interval;
+        public static DateTime? NextRun = default;
+
+        private void CronJob_CronJobEvent(CronJobState jobState, int downloadCount = 0)
+        {
+            CronJobState = jobState;
+            logger.LogInformation($"{DateTime.Now} | {InfoMessage.CronJobChangedState} {jobState}");
+        }
+
         public async Task Execute(IJobExecutionContext context)
         {
+            NextRun = context!.NextFireTimeUtc!.Value.DateTime.ToLocalTime();
             await CheckForNewDownloads();
         }
 
         public async Task CheckForNewDownloads()
         {
+            if (CronJobEvent is null)
+            {
+                CronJobEvent += CronJob_CronJobEvent;
+            }
+
             CronJobEvent?.Invoke(CronJobState.CheckForDownloads);
 
             SettingsModel? settings = SettingsHelper.ReadSettings<SettingsModel>();
@@ -104,16 +121,22 @@ namespace AniWorldAutoDL_Webpanel.Classes
                 if (string.IsNullOrEmpty(m3u8Url))
                     continue;
 
-                episodeDownload.Download.Name = $"{episodeDownload.Download.Name.GetValidFileName()}[GerDub]";
+                episodeDownload.Download.Name = episodeDownload.Download.Name.GetValidFileName();
 
                 CommandResult? result = await converterService.StartDownload(m3u8Url, episodeDownload.Download, settings.DownloadPath);
 
-                if (ConverterService.CTS is not null && !ConverterService.CTS.IsCancellationRequested && ( result is null || !result.IsSuccess ))
+                if (ConverterService.CTS is not null && ( result is null || !result.IsSuccess ))
                 {
-                    logger.LogWarning($"{DateTime.Now} | {WarningMessage.FFMPEGExecutableFail}\n{WarningMessage.DownloadNotRemoved}");
-                    continue;
+                    if (ConverterService.CTS.IsCancellationRequested)
+                    {
+                        logger.LogWarning($"{DateTime.Now} | {WarningMessage.DownloadNotRemoved}");
+                    }
+                    else
+                    {
+                        logger.LogWarning($"{DateTime.Now} | {WarningMessage.FFMPEGExecutableFail}\n{WarningMessage.DownloadNotRemoved}");
+                    }
                 }
-
+                
                 if (result is not null && result.IsSuccess)
                 {
                     bool removeSuccess = await apiService.RemoveFinishedDownload(episodeDownload.Download.Id.ToString());
@@ -129,8 +152,13 @@ namespace AniWorldAutoDL_Webpanel.Classes
                 }
             }
 
-            CronJobEvent?.Invoke(CronJobState.CheckForDownloadsComplete);
             CronJobEvent?.Invoke(CronJobState.WaitForNextCycle);
         }
+
+        public static CronJobState GetCronJobState()
+        {
+            return CronJobState;
+        }
+
     }
 }

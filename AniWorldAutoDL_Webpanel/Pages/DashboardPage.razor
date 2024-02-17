@@ -1,4 +1,6 @@
-﻿@attribute [Route(Routes.Dashboard)]
+﻿@using Microsoft.AspNetCore.Components.Rendering
+@using System.Net
+@attribute [Route(Routes.Dashboard)]
 @attribute [Route(Routes.Index)]
 @inject IHxMessengerService ToastService
 @inject ILogger<DashboardPage> DashboardLogger
@@ -31,11 +33,19 @@
                             <HxSpinner Color="ThemeColor.Secondary" Size="SpinnerSize.Small"></HxSpinner>
                             break;
                         case ConverterState.Idle:
-                            <HxIcon Icon="BootstrapIcon.Hourglass"></HxIcon>
+                            @if (ConverterState == ConverterState.Idle && CronJobState == CronJobState.WaitForNextCycle)
+                            {
+                                <HxIcon Icon="BootstrapIcon.Hourglass"></HxIcon>
+                            }
+                            else
+                            {
+                                <HxSpinner Color="ThemeColor.Secondary" Size="SpinnerSize.Small"></HxSpinner>
+                            }
                             break;
                         default:
                             break;
                     }
+
                 </td>
                 <td class="text-center align-middle" width="600" style="font-family: 'Roboto', sans-serif;">
                     @if (Download is not null)
@@ -90,10 +100,10 @@
                     </HxProgress>
                 </td>
                 <td class="text-center align-middle" width="50">
-                    <HxButton Color="ThemeColor.Warning" Icon="BootstrapIcon.StopFill"></HxButton>
+                    <HxButton Enabled="StopConverterButtonEnabled" Color="ThemeColor.Warning" Icon="BootstrapIcon.StopFill" OnClick="StopConverter"></HxButton>
                 </td>
                 <td class="text-center align-middle" width="50">
-                    <HxButton Color="ThemeColor.Secondary" Icon="BootstrapIcon.PencilFill" OnClick="@MoveToConverterSettings"></HxButton>
+                    <HxButton Enabled="EditConverterSettingsButtonEnabled" Color="ThemeColor.Secondary" Icon="BootstrapIcon.PencilFill" OnClick="@MoveToConverterSettings"></HxButton>
                 </td>
                 <td class="text-center align-middle" width="50">
                     <HxButton Spinner="CheckDownloadsButtonSpinner" Enabled="CheckDownloadsButtonEnabled" OnClick="CheckForDownloads" Color="ThemeColor.Success" Icon="BootstrapIcon.ArrowClockwise"></HxButton>
@@ -101,6 +111,27 @@
             </tr>
         </tbody>
     </table>
+    <div class="container">
+        <p class="" style="float: right !important;">
+            Nächste Prüfung:
+            @if (NextCronJobCycle is not null)
+            {
+                <b>
+                    <span>
+                        @($"{NextCronJobCyleTime}")
+                    </span>
+                    @if (!string.IsNullOrEmpty(TimeUntilCycleText))
+                    {
+                        <span>@($" (in {TimeUntilCycleText})")</span>
+                    }
+                </b>
+            }
+            else
+            {
+                <HxIcon Icon="BootstrapIcon.Dash"></HxIcon>
+            }
+        </p>
+    </div>
 </div>
 
 
@@ -109,10 +140,22 @@
     ConvertProgressModel? ConvertProgress;
     DownloadModel? Download;
     ConverterState ConverterState = ConverterState.Idle;
+    CronJobState CronJobState = CronJobState.WaitForNextCycle;
 
-    CronJob? cronJob;
+    CronJob? CronJob;
+
     bool CheckDownloadsButtonEnabled { get; set; } = true;
     bool CheckDownloadsButtonSpinner { get; set; } = false;
+
+    bool EditConverterSettingsButtonEnabled { get; set; } = true;
+
+    bool StopConverterButtonEnabled { get; set; } = false;
+
+    DateTime? NextCronJobCycle = default;
+    TimeOnly NextCronJobCyleTime;
+    System.Timers.Timer? TmNextCycle;
+    TimeSpan? TimeUntilCycle;
+    string? TimeUntilCycleText;
 
     protected override void OnAfterRender(bool firstRender)
     {
@@ -123,15 +166,72 @@
             if (Download is null)
                 Download = ConverterService.GetDownload();
 
-            cronJob = new(CronJobLogger, ApiService, CS);
+            if (CronJob is null)
+                CronJob = new(CronJobLogger, ApiService, CS);
+
+            CheckCronJobState();
 
             CronJob.CronJobEvent += CronJobEvent;
 
             ConverterService.ConvertProgressChanged += Converter_ConvertProgressChanged;
             ConverterService.ConverterStateChanged += Converter_ConverterStateChanged;
+
+            if (TmNextCycle is null)
+            {
+                TmNextCycle = new()
+                    {
+                        AutoReset = true,
+                        Interval = 1000
+                    };
+
+                TmNextCycle.Elapsed += RefreshCycleTime;
+            }
+
+            if (!TmNextCycle.Enabled)
+            {
+                TmNextCycle.Start();
+            }
         }
 
         base.OnAfterRender(firstRender);
+    }
+
+    private void RefreshCycleTime(Object? source, System.Timers.ElapsedEventArgs e)
+    {
+        if (NextCronJobCycle < DateTime.Now)
+        {
+            TimeUntilCycle = new TimeSpan(0, 0, 0);
+        }
+        else
+        {
+            TimeUntilCycle = NextCronJobCycle?.Subtract(DateTime.Now);
+        }
+
+        TimeUntilCycleText = "";
+
+        if (TimeUntilCycle?.Hours > 0)
+        {
+            TimeUntilCycleText = $"{TimeUntilCycle:hh} Stunden";
+        }
+
+        if (TimeUntilCycle?.Minutes > 0)
+        {
+            TimeUntilCycleText += $"{TimeUntilCycle:mm} Minuten";
+        }
+
+        if (TimeUntilCycle?.Seconds > 0)
+        {
+            TimeUntilCycleText += $"{TimeUntilCycle:ss} Sekunden";
+        }
+
+        InvokeAsync(() => StateHasChanged());
+    }
+
+    private void CheckCronJobState()
+    {
+        CronJobState cronJobState = CronJob.GetCronJobState();
+
+        HandleCronJobState(cronJobState);
     }
 
     private void MoveToConverterSettings()
@@ -147,31 +247,44 @@
 
     private void CronJobEvent(CronJobState jobState, int downloadCount = 0)
     {
+        if (CronJob.NextRun is null)
+            return;
+
+        NextCronJobCycle = CronJob.NextRun.Value;
+        NextCronJobCyleTime = TimeOnly.FromDateTime(NextCronJobCycle.Value);
+        HandleCronJobState(jobState);
+    }
+
+    private void HandleCronJobState(CronJobState jobState)
+    {
+        CronJobState = jobState;
+
         switch (jobState)
         {
             case CronJobState.WaitForNextCycle:
                 CheckDownloadsButtonEnabled = true;
                 CheckDownloadsButtonSpinner = false;
+                StopConverterButtonEnabled = false;
+                EditConverterSettingsButtonEnabled = true;
                 break;
 
             case CronJobState.Running:
                 CheckDownloadsButtonEnabled = false;
                 CheckDownloadsButtonSpinner = false;
-                break;
-
-            case CronJobState.CheckForDownloadsComplete:
-                CheckDownloadsButtonEnabled = true;
-                CheckDownloadsButtonSpinner = false;
+                StopConverterButtonEnabled = true;
+                EditConverterSettingsButtonEnabled = false;
                 break;
 
             case CronJobState.CheckForDownloads:
                 CheckDownloadsButtonEnabled = false;
                 CheckDownloadsButtonSpinner = true;
-                ToastService.AddInformation(InfoMessage.CheckingForDownloads);
+                ToastService.AddMessage(InfoMessage.CheckingForDownloads, 2000);
                 break;
             default:
                 break;
         }
+
+        InvokeAsync(() => StateHasChanged());
     }
 
     private void Converter_ConverterStateChanged(ConverterState state, DownloadModel? download)
@@ -204,9 +317,14 @@
 
     private async Task CheckForDownloads()
     {
-        if (cronJob is null)
+        if (CronJob is null)
             return;
 
-        await cronJob.CheckForNewDownloads();
+        await CronJob.CheckForNewDownloads();
+    }
+
+    private void StopConverter()
+    {
+        ConverterService.Abort();
     }
 }

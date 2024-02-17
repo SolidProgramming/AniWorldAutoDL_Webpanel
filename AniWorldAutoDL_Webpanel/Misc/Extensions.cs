@@ -1,4 +1,5 @@
 ﻿using Quartz;
+using Quartz.Impl.Matchers;
 using System.Text.RegularExpressions;
 
 namespace AniWorldAutoDL_Webpanel.Misc
@@ -23,6 +24,8 @@ namespace AniWorldAutoDL_Webpanel.Misc
                 .WithSimpleSchedule(_ =>
                     _.WithIntervalInMinutes(intervalInMinutes)
                     .RepeatForever()));
+
+            CronJob.Interval = intervalInMinutes;
         }
 
         private static Dictionary<Language, string> VOELanguageKeyCollection = new()
