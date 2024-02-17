@@ -32,7 +32,7 @@ builder.Services.AddHttpClient<IApiService, ApiService>();
 
 builder.Services.AddQuartz(_ =>
 {
-    _.AddJobAndTrigger<CronJob>(5);
+    _.AddJobAndTrigger<CronJob>(15);
 });
 
 builder.Services.AddQuartzHostedService(_ =>

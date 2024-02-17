@@ -1,4 +1,6 @@
-﻿using CliWrap;
+﻿using AniWorldAutoDL_Webpanel.Enums;
+using CliWrap;
+using Havit.Linq;
 using Quartz;
 using System.Linq;
 
@@ -84,17 +86,22 @@ namespace AniWorldAutoDL_Webpanel.Classes
             }
 
             IEnumerable<EpisodeDownloadModel>? downloads = await apiService.GetAsync<IEnumerable<EpisodeDownloadModel>?>("getDownloads", new() { { "username", settings.User.Username } });
-            Queue<EpisodeDownloadModel> downloadQue = new();
+            Queue<EpisodeDownloadModel>? downloadQue;
 
-            if (downloads is not null && downloads.Any())
+            if (downloads is null || !downloads.Any())
             {
-                downloads.ToList().ForEach(downloadQue.Enqueue);                
-                ConverterService.CTS = new CancellationTokenSource();
+                CronJobEvent?.Invoke(CronJobState.WaitForNextCycle);
+                return;
             }
 
-            while (downloadQue.Count != 0)
+            downloadQue = downloads.EnqueueRange();
+            ConverterService.CTS = new CancellationTokenSource();
+
+            while (downloadQue?.Count != 0)
             {
                 EpisodeDownloadModel episodeDownload = downloadQue.Dequeue();
+
+                string originalEpisodeName = episodeDownload.Download.Name;
 
                 CronJobEvent?.Invoke(CronJobState.Running, downloadQue.Count);
 
@@ -107,8 +114,7 @@ namespace AniWorldAutoDL_Webpanel.Classes
                 if (string.IsNullOrEmpty(episodeDownload.Download.Name))
                     continue;
 
-                string url = "";
-                logMessage = $"{DateTime.Now} | ";
+                string url = "";                
 
                 if (episodeDownload.StreamingPortal.Name == "S.TO")
                 {
@@ -126,55 +132,67 @@ namespace AniWorldAutoDL_Webpanel.Classes
 
                 Dictionary<Language, List<string>> languageRedirectLinks = HosterHelper.GetLanguageRedirectLinks(html);
 
-                if (languageRedirectLinks == null || languageRedirectLinks.Count == 0 || !languageRedirectLinks.ContainsKey(Language.GerDub))
-                    continue;
-
-                if (episodeDownload.StreamingPortal.Name == "S.TO")
-                {
-                    url = $"https://s.to{languageRedirectLinks[Language.GerDub][0]}";
-                }
-                else if (episodeDownload.StreamingPortal.Name == "AniWorld")
-                {
-                    url = $"https://aniworld.to{languageRedirectLinks[Language.GerDub][0]}";
-                }
-                else { continue; }
-
-                string? m3u8Url = await HosterHelper.GetEpisodeM3U8(url);
-
-                if (string.IsNullOrEmpty(m3u8Url))
+                if (languageRedirectLinks == null || languageRedirectLinks.Count == 0)
                     continue;
 
                 episodeDownload.Download.Name = episodeDownload.Download.Name.GetValidFileName();
 
-                CommandResult? result = await converterService.StartDownload(m3u8Url, episodeDownload.Download, settings.DownloadPath);
+                IEnumerable<Language> episodeLanguages = episodeDownload.Download.LanguageFlag.GetFlags<Language>(ignore: Language.None);
+                IEnumerable<Language> redirectLanguages = languageRedirectLinks.Keys.Where(_ => episodeLanguages.Contains(_));
 
-                if (ConverterService.CTS is not null && ( result is null || !result.IsSuccess ))
+                IEnumerable<Language>? downloadLanguages = episodeLanguages.Intersect(redirectLanguages);
+
+                foreach (Language language in downloadLanguages)
                 {
-                    if (ConverterService.CTS.IsCancellationRequested)
-                    {
-                        logMessage += WarningMessage.DownloadNotRemoved;
-                        CronJobErrorEvent?.Invoke(Severity.Warning, logMessage);
-                    }
-                    else
-                    {
-                        logMessage += $"{WarningMessage.FFMPEGExecutableFail}\n{WarningMessage.DownloadNotRemoved}";
-                        CronJobErrorEvent?.Invoke(Severity.Warning, logMessage);
-                    }
-                }
+                    logMessage = $"{DateTime.Now} | ";
 
-                if (result is not null && result.IsSuccess)
-                {
-                    bool removeSuccess = await apiService.RemoveFinishedDownload(episodeDownload.Download.Id.ToString());
-
-                    if (removeSuccess)
+                    if (episodeDownload.StreamingPortal.Name == "S.TO")
                     {
-                        logMessage += $"{InfoMessage.DownloadFinished} {InfoMessage.DownloadDBRemoved}";
-                        CronJobErrorEvent?.Invoke(Severity.Information, logMessage);
+                        url = $"https://s.to{languageRedirectLinks[language][0]}";
                     }
-                    else
+                    else if (episodeDownload.StreamingPortal.Name == "AniWorld")
                     {
-                        logMessage += WarningMessage.DownloadNotRemoved;
-                        CronJobErrorEvent?.Invoke(Severity.Warning, logMessage);
+                        url = $"https://aniworld.to{languageRedirectLinks[language][0]}";
+                    }
+                    else { continue; }
+
+                    string? m3u8Url = await HosterHelper.GetEpisodeM3U8(url);
+
+                    if (string.IsNullOrEmpty(m3u8Url))
+                        continue;
+
+                    episodeDownload.Download.Name = $"{originalEpisodeName.GetValidFileName()}[{language}]";
+
+                    CommandResult? result = await converterService.StartDownload(m3u8Url, episodeDownload.Download, settings.DownloadPath);
+
+                    if (ConverterService.CTS is not null && ( result is null || !result.IsSuccess ))
+                    {
+                        if (ConverterService.CTS.IsCancellationRequested)
+                        {
+                            logMessage += WarningMessage.DownloadNotRemoved;
+                            CronJobErrorEvent?.Invoke(Severity.Warning, logMessage);
+                        }
+                        else
+                        {
+                            logMessage += $"{WarningMessage.FFMPEGExecutableFail}\n{WarningMessage.DownloadNotRemoved}";
+                            CronJobErrorEvent?.Invoke(Severity.Warning, logMessage);
+                        }
+                    }
+
+                    if (result is not null && result.IsSuccess)
+                    {
+                        bool removeSuccess = await apiService.RemoveFinishedDownload(episodeDownload.Download.Id.ToString());
+
+                        if (removeSuccess)
+                        {
+                            logMessage += $"{InfoMessage.DownloadFinished} {InfoMessage.DownloadDBRemoved}";
+                            CronJobErrorEvent?.Invoke(Severity.Information, logMessage);
+                        }
+                        else
+                        {
+                            logMessage += WarningMessage.DownloadNotRemoved;
+                            CronJobErrorEvent?.Invoke(Severity.Warning, logMessage);
+                        }
                     }
                 }
             }

@@ -1,6 +1,7 @@
 ﻿using Quartz;
-using Quartz.Impl.Matchers;
+using System.Collections;
 using System.Text.RegularExpressions;
+using System.Linq;
 
 namespace AniWorldAutoDL_Webpanel.Misc
 {
@@ -58,14 +59,14 @@ namespace AniWorldAutoDL_Webpanel.Misc
                 .Replace("’", "");
         }
 
-        internal static string ToVOELanguageKey(this Language language)
+        internal static string? ToVOELanguageKey(this Language language)
         {
             if (VOELanguageKeyCollection.ContainsKey(language))
             {
                 return VOELanguageKeyCollection[language];
             }
 
-            return null;
+            return default;
         }
 
         internal static string Repeat(this string text, int n)
@@ -78,6 +79,28 @@ namespace AniWorldAutoDL_Webpanel.Misc
             }
 
             return span.ToString();
+        }
+
+        public static Queue<T>? EnqueueRange<T>(this IEnumerable<T> source) where T : class
+        {
+            if (!source.Any())
+                return default;
+
+            Queue<T> que = new();
+
+            source.ToList().ForEach(que.Enqueue);
+
+            return que;
+        }
+
+        public static IEnumerable<T> GetFlags<T>(this Enum input, Enum? ignore = default)
+        {
+            foreach (T value in Enum.GetValues(input.GetType()))
+            {
+                Enum? enumVal = (Enum)Convert.ChangeType(value, typeof(Enum));
+                if (!enumVal.Equals(ignore) && input.HasFlag(enumVal))
+                    yield return value;
+            }
         }
     }
 }
