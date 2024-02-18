@@ -11,7 +11,7 @@ namespace AniWorldAutoDL_Webpanel.Classes
     internal class CronJob(ILogger<CronJob> logger, IApiService apiService, IConverterService converterService)
          : IJob
     {
-        public delegate void CronJobEventHandler(CronJobState jobState, int downloadCount = 0);
+        public delegate void CronJobEventHandler(CronJobState jobState, int downloadCount = 0, int languageDownloadCount = 0);
         public static event CronJobEventHandler? CronJobEvent;
 
         public delegate void CronJobErrorEventHandler(Severity severity, string message);
@@ -22,8 +22,11 @@ namespace AniWorldAutoDL_Webpanel.Classes
         public static int Interval;
         public static DateTime? NextRun = default;
 
-        private void CronJob_CronJobEvent(CronJobState jobState, int downloadCount = 0)
+        private void CronJob_CronJobEvent(CronJobState jobState, int downloadCount = 0, int languageDownloadCount = 0)
         {
+            if (CronJobState == jobState)
+                return;
+
             CronJobState = jobState;
             logger.LogInformation($"{DateTime.Now} | {InfoMessage.CronJobChangedState} {jobState}");
         }
@@ -41,9 +44,19 @@ namespace AniWorldAutoDL_Webpanel.Classes
                 CronJobEvent += CronJob_CronJobEvent;
             }
 
-            CronJobEvent?.Invoke(CronJobState.CheckForDownloads);
-
             string logMessage = $"{DateTime.Now} | ";
+
+            if (CronJobState != CronJobState.WaitForNextCycle)
+            {
+                logMessage += $"{InfoMessage.CronJobRunning}";
+
+                logger.LogInformation(logMessage);
+                CronJobErrorEvent?.Invoke(Severity.Information, logMessage);
+
+                return;
+            }
+
+            CronJobEvent?.Invoke(CronJobState.CheckForDownloads);
 
             SettingsModel? settings = SettingsHelper.ReadSettings<SettingsModel>();
 
@@ -99,6 +112,8 @@ namespace AniWorldAutoDL_Webpanel.Classes
 
             while (downloadQue?.Count != 0)
             {
+                logMessage = $"{DateTime.Now} | ";
+
                 EpisodeDownloadModel episodeDownload = downloadQue.Dequeue();
 
                 string originalEpisodeName = episodeDownload.Download.Name;
@@ -114,7 +129,7 @@ namespace AniWorldAutoDL_Webpanel.Classes
                 if (string.IsNullOrEmpty(episodeDownload.Download.Name))
                     continue;
 
-                string url = "";                
+                string url = "";
 
                 if (episodeDownload.StreamingPortal.Name == "S.TO")
                 {
@@ -128,7 +143,24 @@ namespace AniWorldAutoDL_Webpanel.Classes
 
                 using HttpClient client = new();
 
-                string? html = await client.GetStringAsync(url);
+                string? html;
+
+                try
+                {
+                    html = await client.GetStringAsync(url);
+                }
+                catch(HttpRequestException ex)
+                {
+                    logMessage += $"{ErrorMessage.HttpRequestException}\n{ex.Message}";
+                    CronJobErrorEvent?.Invoke(Severity.Error, logMessage);
+                    continue;
+                }
+                catch (Exception ex)
+                {
+                    logMessage += ex.Message;
+                    CronJobErrorEvent?.Invoke(Severity.Error, logMessage);
+                    continue;
+                }
 
                 Dictionary<Language, List<string>> languageRedirectLinks = HosterHelper.GetLanguageRedirectLinks(html);
 
@@ -142,8 +174,12 @@ namespace AniWorldAutoDL_Webpanel.Classes
 
                 IEnumerable<Language>? downloadLanguages = episodeLanguages.Intersect(redirectLanguages);
 
+                int finishedDownloadsCount = 1;
+
                 foreach (Language language in downloadLanguages)
                 {
+                    CronJobEvent?.Invoke(CronJobState.Running, downloadQue.Count, downloadLanguages.Count() - finishedDownloadsCount);
+
                     logMessage = $"{DateTime.Now} | ";
 
                     if (episodeDownload.StreamingPortal.Name == "S.TO")
@@ -165,11 +201,13 @@ namespace AniWorldAutoDL_Webpanel.Classes
 
                     CommandResult? result = await converterService.StartDownload(m3u8Url, episodeDownload.Download, settings.DownloadPath);
 
+                    finishedDownloadsCount++;
+
                     if (ConverterService.CTS is not null && ( result is null || !result.IsSuccess ))
                     {
                         if (ConverterService.CTS.IsCancellationRequested)
                         {
-                            logMessage += WarningMessage.DownloadNotRemoved;
+                            logMessage += $"{WarningMessage.DownloadCanceled} {WarningMessage.DownloadNotRemoved}";
                             CronJobErrorEvent?.Invoke(Severity.Warning, logMessage);
                         }
                         else
@@ -181,17 +219,25 @@ namespace AniWorldAutoDL_Webpanel.Classes
 
                     if (result is not null && result.IsSuccess)
                     {
-                        bool removeSuccess = await apiService.RemoveFinishedDownload(episodeDownload.Download.Id.ToString());
+                        logMessage += InfoMessage.DownloadFinished;
+                        CronJobErrorEvent?.Invoke(Severity.Information, logMessage);
 
-                        if (removeSuccess)
+                        if (finishedDownloadsCount >= downloadLanguages.Count())
                         {
-                            logMessage += $"{InfoMessage.DownloadFinished} {InfoMessage.DownloadDBRemoved}";
-                            CronJobErrorEvent?.Invoke(Severity.Information, logMessage);
-                        }
-                        else
-                        {
-                            logMessage += WarningMessage.DownloadNotRemoved;
-                            CronJobErrorEvent?.Invoke(Severity.Warning, logMessage);
+                            bool removeSuccess = await apiService.RemoveFinishedDownload(episodeDownload.Download.Id.ToString());
+
+                            logMessage = $"{DateTime.Now} | ";
+
+                            if (removeSuccess)
+                            {
+                                logMessage += InfoMessage.DownloadDBRemoved;
+                                CronJobErrorEvent?.Invoke(Severity.Information, logMessage);
+                            }
+                            else
+                            {
+                                logMessage += WarningMessage.DownloadNotRemoved;
+                                CronJobErrorEvent?.Invoke(Severity.Warning, logMessage);
+                            }
                         }
                     }
                 }

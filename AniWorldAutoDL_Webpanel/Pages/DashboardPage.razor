@@ -114,38 +114,47 @@
     <div class="container">
         <div class="row">
             <div class="col d-flex justify-content-start">
-                <span>
-                    Warteschlange:
-                    <h5 class="d-inline">
-                        <HxBadge Type="BadgeType.RoundedPill" CssClass="mx-2" Color="ThemeColor.Success">@DownloadQueCount</HxBadge>
+                <h5 class="d-inline">
+                    <HxBadge Type="BadgeType.RoundedPill" Color="ThemeColor.Success">
+                        <HxIcon Icon="BootstrapIcon.FileEarmarkPlus"></HxIcon>
+                        @DownloadQueCount
+                    </HxBadge>
+                </h5>
+                <div class="align-middle ms-2">
+                    <h5 class="d-inline align-middle">
+                        <HxBadge Type="BadgeType.RoundedPill" Color="ThemeColor.Secondary">
+                            <HxIcon Icon="BootstrapIcon.Translate"></HxIcon>
+                            @LanguageDownloadCount
+                        </HxBadge>
                     </h5>
-                </span>
+                </div>
             </div>
             <div class="col d-flex justify-content-end">
-                <p>
-                    Nächste Prüfung:
                     @if (NextCronJobCycle is not null)
                     {
-                        <b>
-                            <span>
-                                @($"{NextCronJobCyleTime}")
-                            </span>
-                            @if (!string.IsNullOrEmpty(TimeUntilCycleText))
-                            {
-                                <span>@($" (in {TimeUntilCycleText})")</span>
-                            }
-                        </b>
+                        <h5 class="d-inline align-middle">
+                            <HxBadge Type="BadgeType.RoundedPill" Color="ThemeColor.Success">
+                                <HxIcon Icon="BootstrapIcon.Clock"></HxIcon>
+                                <span class="ms-2">
+                                    @($"{NextCronJobCyleTime}")
+                                </span>
+                            </HxBadge>
+                            <HxBadge CssClass="ms-2" Type="BadgeType.RoundedPill" Color="ThemeColor.Secondary">
+                                @if (!string.IsNullOrEmpty(TimeUntilCycleText))
+                                {
+                                    <span>@TimeUntilCycleText</span>
+                                }
+                            </HxBadge>
+                        </h5>
                     }
                     else
                     {
                         <HxIcon Icon="BootstrapIcon.Dash"></HxIcon>
                     }
-                </p>
             </div>
         </div>
     </div>
 </div>
-
 
 
 @code {
@@ -170,6 +179,7 @@
     private string? TimeUntilCycleText;
 
     private int DownloadQueCount;
+    private int LanguageDownloadCount;
 
     protected override void OnAfterRender(bool firstRender)
     {
@@ -240,10 +250,7 @@
             TimeUntilCycleText += $" {TimeUntilCycle:mm} Minuten";
         }
 
-        if (TimeUntilCycle?.Seconds > 0)
-        {
-            TimeUntilCycleText += $" {TimeUntilCycle:ss} Sekunden";
-        }
+        TimeUntilCycleText += $" {TimeUntilCycle:ss} Sekunden";
 
         InvokeAsync(() => StateHasChanged());
     }
@@ -266,15 +273,16 @@
         InvokeAsync(() => StateHasChanged());
     }
 
-    private void CronJobEvent(CronJobState jobState, int downloadCount = 0)
+    private void CronJobEvent(CronJobState jobState, int downloadCount = 0, int languageDownloadCount = 0)
     {
-        if (CronJob.NextRun is null)
-            return;
-
         if (jobState == CronJobState.Running)
         {
             DownloadQueCount = downloadCount;
+            LanguageDownloadCount = languageDownloadCount;
         }
+
+        if (CronJob.NextRun is null)
+            return;
 
         HandleCronJobState(jobState);
     }

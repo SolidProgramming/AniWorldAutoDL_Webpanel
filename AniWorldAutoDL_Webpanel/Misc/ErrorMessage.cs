@@ -13,5 +13,6 @@
         internal const string APIServiceNotInitialized = "API Service is not initialized! Call IApiService.Init() on startup.";
         internal const string ConverterServiceNotInitialized = "Converter Service is not initialized! Call IConverterService.Init() on startup.";
         internal const string CronJobNotInitialized = "Cron Job/Service is not initialized! Call c on startup.";
+        internal const string HttpRequestException = "Error requesting data from hoster!";
     }
 }

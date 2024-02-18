@@ -10,5 +10,6 @@
         internal const string CheckingForDownloads = "Auf neue Downloads prüfen...";
         internal const string CronJobInit = "Cron Job initialized.";
         internal const string CronJobChangedState = "Cron Job changed state to:";
+        internal const string CronJobRunning = "Cron Job is currently running. Skipping...";
     }
 }
