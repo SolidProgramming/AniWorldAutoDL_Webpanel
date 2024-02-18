@@ -1,8 +1,5 @@
-﻿using AniWorldAutoDL_Webpanel.Enums;
-using CliWrap;
-using Havit.Linq;
+﻿using CliWrap;
 using Quartz;
-using System.Linq;
 
 
 namespace AniWorldAutoDL_Webpanel.Classes
@@ -11,7 +8,7 @@ namespace AniWorldAutoDL_Webpanel.Classes
     internal class CronJob(ILogger<CronJob> logger, IApiService apiService, IConverterService converterService)
          : IJob
     {
-        public delegate void CronJobEventHandler(CronJobState jobState, int downloadCount = 0, int languageDownloadCount = 0);
+        public delegate void CronJobEventHandler(CronJobState jobState, int downloadCount = 0, int languageDownloadCount = 0, bool forceUpdate = false);
         public static event CronJobEventHandler? CronJobEvent;
 
         public delegate void CronJobErrorEventHandler(Severity severity, string message);
@@ -22,9 +19,9 @@ namespace AniWorldAutoDL_Webpanel.Classes
         public static int Interval;
         public static DateTime? NextRun = default;
 
-        private void CronJob_CronJobEvent(CronJobState jobState, int downloadCount = 0, int languageDownloadCount = 0)
+        private void CronJob_CronJobEvent(CronJobState jobState, int downloadCount = 0, int languageDownloadCount = 0, bool forceUpdate = false)
         {
-            if (CronJobState == jobState)
+            if (CronJobState == jobState && !forceUpdate)
                 return;
 
             CronJobState = jobState;
@@ -112,6 +109,9 @@ namespace AniWorldAutoDL_Webpanel.Classes
 
             while (downloadQue?.Count != 0)
             {
+                if (ConverterService.CTS is not null && ConverterService.CTS.IsCancellationRequested)
+                    break;                
+
                 logMessage = $"{DateTime.Now} | ";
 
                 EpisodeDownloadModel episodeDownload = downloadQue.Dequeue();
@@ -144,22 +144,34 @@ namespace AniWorldAutoDL_Webpanel.Classes
                 using HttpClient client = new();
 
                 string? html;
+                bool hasError = false;
 
                 try
                 {
                     html = await client.GetStringAsync(url);
                 }
-                catch(HttpRequestException ex)
+                catch (HttpRequestException ex)
                 {
-                    logMessage += $"{ErrorMessage.HttpRequestException}\n{ex.Message}";
+                    logMessage += $"{ex.Message}";
                     CronJobErrorEvent?.Invoke(Severity.Error, logMessage);
+                    hasError = true;
                     continue;
                 }
                 catch (Exception ex)
                 {
-                    logMessage += ex.Message;
+                    logMessage += $"{ex.Message}";
                     CronJobErrorEvent?.Invoke(Severity.Error, logMessage);
+                    hasError = true;
                     continue;
+                }
+                finally
+                {
+                    if (hasError)
+                    {
+                        logMessage = $"{DateTime.Now} | ";
+                        logMessage += $"{WarningMessage.DownloadNotRemoved}";
+                        CronJobErrorEvent?.Invoke(Severity.Warning, logMessage);
+                    }
                 }
 
                 Dictionary<Language, List<string>> languageRedirectLinks = HosterHelper.GetLanguageRedirectLinks(html);
@@ -206,9 +218,11 @@ namespace AniWorldAutoDL_Webpanel.Classes
                     if (ConverterService.CTS is not null && ( result is null || !result.IsSuccess ))
                     {
                         if (ConverterService.CTS.IsCancellationRequested)
-                        {
+                        {                            
                             logMessage += $"{WarningMessage.DownloadCanceled} {WarningMessage.DownloadNotRemoved}";
                             CronJobErrorEvent?.Invoke(Severity.Warning, logMessage);
+
+                            break;
                         }
                         else
                         {
@@ -243,7 +257,7 @@ namespace AniWorldAutoDL_Webpanel.Classes
                 }
             }
 
-            CronJobEvent?.Invoke(CronJobState.WaitForNextCycle);
+            CronJobEvent?.Invoke(CronJobState.WaitForNextCycle, 0, 0, true);
         }
 
         public static CronJobState GetCronJobState()

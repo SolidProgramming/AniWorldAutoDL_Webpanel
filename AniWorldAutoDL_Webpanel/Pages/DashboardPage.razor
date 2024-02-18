@@ -33,7 +33,8 @@
                             <HxSpinner Color="ThemeColor.Secondary" Size="SpinnerSize.Small"></HxSpinner>
                             break;
                         case ConverterState.Idle:
-                            @if (ConverterState == ConverterState.Idle && CronJobState == CronJobState.WaitForNextCycle)
+                        case ConverterState.Undefined:
+                            @if (CronJobState == CronJobState.WaitForNextCycle)
                             {
                                 <HxIcon Icon="BootstrapIcon.Hourglass"></HxIcon>
                             }
@@ -165,7 +166,7 @@
 
     private CronJob? CronJob;
 
-    private bool CheckDownloadsButtonEnabled { get; set; } = true;
+    private bool CheckDownloadsButtonEnabled { get; set; } = false;
     private bool CheckDownloadsButtonSpinner { get; set; } = false;
 
     private bool EditConverterSettingsButtonEnabled { get; set; } = true;
@@ -193,7 +194,7 @@
             if (CronJob is null)
                 CronJob = new(CronJobLogger, ApiService, CS);
 
-            CheckCronJobState();
+            CheckCronJobState(firstRender);
 
             CronJob.CronJobEvent += CronJobEvent;
             CronJob.CronJobErrorEvent += CronJobErrorEvent;
@@ -255,11 +256,14 @@
         InvokeAsync(() => StateHasChanged());
     }
 
-    private void CheckCronJobState()
+    private void CheckCronJobState(bool firstRender = false)
     {
         CronJobState cronJobState = CronJob.GetCronJobState();
 
-        HandleCronJobState(cronJobState);
+        if (!firstRender)
+        {
+            HandleCronJobState(cronJobState);
+        }
     }
 
     private void MoveToConverterSettings()
@@ -273,9 +277,9 @@
         InvokeAsync(() => StateHasChanged());
     }
 
-    private void CronJobEvent(CronJobState jobState, int downloadCount = 0, int languageDownloadCount = 0)
+    private void CronJobEvent(CronJobState jobState, int downloadCount = 0, int languageDownloadCount = 0, bool forceUpdate = false)
     {
-        if (jobState == CronJobState.Running)
+        if (jobState == CronJobState.Running || forceUpdate)
         {
             DownloadQueCount = downloadCount;
             LanguageDownloadCount = languageDownloadCount;
