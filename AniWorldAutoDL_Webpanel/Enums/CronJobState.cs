@@ -3,7 +3,7 @@
     public enum CronJobState
     {
         WaitForNextCycle,
-        CheckForDownloads,
+        CheckingForDownloads,
         Running
     }
 }

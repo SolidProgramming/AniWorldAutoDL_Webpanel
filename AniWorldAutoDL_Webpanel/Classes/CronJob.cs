@@ -4,28 +4,36 @@ using Quartz;
 
 namespace AniWorldAutoDL_Webpanel.Classes
 {
-    [DisallowConcurrentExecution]
     internal class CronJob(ILogger<CronJob> logger, IApiService apiService, IConverterService converterService)
          : IJob
     {
-        public delegate void CronJobEventHandler(CronJobState jobState, int downloadCount = 0, int languageDownloadCount = 0, bool forceUpdate = false);
+        public delegate void CronJobEventHandler(CronJobState jobState);
         public static event CronJobEventHandler? CronJobEvent;
 
         public delegate void CronJobErrorEventHandler(Severity severity, string message);
         public static event CronJobErrorEventHandler? CronJobErrorEvent;
+
+        public delegate void CronJobDownloadsEventHandler(int downloadCount, int languageDownloadCount);
+        public static event CronJobDownloadsEventHandler? CronJobDownloadsEvent;
 
         private static CronJobState CronJobState { get; set; } = CronJobState.WaitForNextCycle;
 
         public static int Interval;
         public static DateTime? NextRun = default;
 
-        private void CronJob_CronJobEvent(CronJobState jobState, int downloadCount = 0, int languageDownloadCount = 0, bool forceUpdate = false)
-        {
-            if (CronJobState == jobState && !forceUpdate)
-                return;
+        public static int DownloadCount { get; set; }
+        public static int LanguageDownloadCount { get; set; }
 
+        private void CronJob_CronJobEvent(CronJobState jobState)
+        {
             CronJobState = jobState;
             logger.LogInformation($"{DateTime.Now} | {InfoMessage.CronJobChangedState} {jobState}");
+        }
+
+        private void CronJob_CronJobDownloadsEvent(int downloadCount, int languageDownloadCount)
+        {
+            DownloadCount = downloadCount;
+            LanguageDownloadCount = languageDownloadCount;
         }
 
         public async Task Execute(IJobExecutionContext context)
@@ -36,11 +44,6 @@ namespace AniWorldAutoDL_Webpanel.Classes
 
         public async Task CheckForNewDownloads()
         {
-            if (CronJobEvent is null)
-            {
-                CronJobEvent += CronJob_CronJobEvent;
-            }
-
             string logMessage = $"{DateTime.Now} | ";
 
             if (CronJobState != CronJobState.WaitForNextCycle)
@@ -52,8 +55,14 @@ namespace AniWorldAutoDL_Webpanel.Classes
 
                 return;
             }
+            else
+            {
+                CronJobEvent += CronJob_CronJobEvent;
+                CronJobDownloadsEvent += CronJob_CronJobDownloadsEvent;
+            }
 
-            CronJobEvent?.Invoke(CronJobState.CheckForDownloads);
+
+            CronJobEvent?.Invoke(CronJobState.CheckingForDownloads);
 
             SettingsModel? settings = SettingsHelper.ReadSettings<SettingsModel>();
 
@@ -104,13 +113,15 @@ namespace AniWorldAutoDL_Webpanel.Classes
                 return;
             }
 
+            CronJobEvent?.Invoke(CronJobState.Running);
+
             downloadQue = downloads.EnqueueRange();
             ConverterService.CTS = new CancellationTokenSource();
 
             while (downloadQue?.Count != 0)
             {
                 if (ConverterService.CTS is not null && ConverterService.CTS.IsCancellationRequested)
-                    break;                
+                    break;
 
                 logMessage = $"{DateTime.Now} | ";
 
@@ -118,13 +129,7 @@ namespace AniWorldAutoDL_Webpanel.Classes
 
                 string originalEpisodeName = episodeDownload.Download.Name;
 
-                CronJobEvent?.Invoke(CronJobState.Running, downloadQue.Count);
-
-                if (ConverterService.CTS is not null && ConverterService.CTS.IsCancellationRequested)
-                {
-                    CronJobEvent?.Invoke(CronJobState.WaitForNextCycle);
-                    return;
-                }
+                CronJobDownloadsEvent?.Invoke(downloadQue.Count, 0);
 
                 if (string.IsNullOrEmpty(episodeDownload.Download.Name))
                     continue;
@@ -190,7 +195,7 @@ namespace AniWorldAutoDL_Webpanel.Classes
 
                 foreach (Language language in downloadLanguages)
                 {
-                    CronJobEvent?.Invoke(CronJobState.Running, downloadQue.Count, downloadLanguages.Count() - finishedDownloadsCount);
+                    CronJobDownloadsEvent?.Invoke(downloadQue.Count, downloadLanguages.Count() - finishedDownloadsCount);
 
                     logMessage = $"{DateTime.Now} | ";
 
@@ -218,10 +223,9 @@ namespace AniWorldAutoDL_Webpanel.Classes
                     if (ConverterService.CTS is not null && ( result is null || !result.IsSuccess ))
                     {
                         if (ConverterService.CTS.IsCancellationRequested)
-                        {                            
+                        {
                             logMessage += $"{WarningMessage.DownloadCanceled} {WarningMessage.DownloadNotRemoved}";
                             CronJobErrorEvent?.Invoke(Severity.Warning, logMessage);
-
                             break;
                         }
                         else
@@ -256,8 +260,8 @@ namespace AniWorldAutoDL_Webpanel.Classes
                     }
                 }
             }
-
-            CronJobEvent?.Invoke(CronJobState.WaitForNextCycle, 0, 0, true);
+            CronJobDownloadsEvent?.Invoke(0, 0);
+            CronJobEvent?.Invoke(CronJobState.WaitForNextCycle);
         }
 
         public static CronJobState GetCronJobState()

@@ -9,15 +9,17 @@ using Havit.Blazor.Components.Web;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 
+SettingsModel? settings = SettingsHelper.ReadSettings<SettingsModel>();
+
 if (AnotherInstanceExists())
 {
-    OpenBrowser("https://localhost:5443");
+    OpenBrowser(settings.HostUrl);
     return;
 }
 
 WebApplicationBuilder? builder = WebApplication.CreateBuilder(args);
 
-builder.WebHost.UseUrls("http://localhost:5080");
+builder.WebHost.UseUrls(settings.HostUrl, "http://localhost:5080");
 
 builder.Services.AddHsts(_ =>
 {
@@ -63,7 +65,7 @@ converterService.Init();
 IApiService apiService = app.Services.GetRequiredService<IApiService>();
 apiService.Init();
 
-OpenBrowser("http://localhost:5080");
+OpenBrowser(settings.HostUrl);
 
 app.Run();
 

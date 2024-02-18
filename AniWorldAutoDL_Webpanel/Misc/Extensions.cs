@@ -20,7 +20,7 @@ namespace AniWorldAutoDL_Webpanel.Misc
             quartz.AddJob<T>(opts => opts.WithIdentity(jobKey));
 
             DateTimeOffset startTime = new DateTimeOffset(DateTime.Now.ToLocalTime())
-                                                .AddSeconds(15);
+                                                .AddSeconds(10);
 
             quartz.AddTrigger(opts => opts
                 .ForJob(jobKey)

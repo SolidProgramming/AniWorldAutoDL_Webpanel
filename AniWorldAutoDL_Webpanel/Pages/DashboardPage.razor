@@ -131,27 +131,27 @@
                 </div>
             </div>
             <div class="col d-flex justify-content-end">
-                    @if (NextCronJobCycle is not null)
-                    {
-                        <h5 class="d-inline align-middle">
-                            <HxBadge Type="BadgeType.RoundedPill" Color="ThemeColor.Success">
-                                <HxIcon Icon="BootstrapIcon.Clock"></HxIcon>
-                                <span class="ms-2">
-                                    @($"{NextCronJobCyleTime}")
-                                </span>
-                            </HxBadge>
-                            <HxBadge CssClass="ms-2" Type="BadgeType.RoundedPill" Color="ThemeColor.Secondary">
-                                @if (!string.IsNullOrEmpty(TimeUntilCycleText))
-                                {
-                                    <span>@TimeUntilCycleText</span>
-                                }
-                            </HxBadge>
-                        </h5>
-                    }
-                    else
-                    {
-                        <HxIcon Icon="BootstrapIcon.Dash"></HxIcon>
-                    }
+                @if (NextCronJobCycle is not null)
+                {
+                    <h5 class="d-inline align-middle">
+                        <HxBadge Type="BadgeType.RoundedPill" Color="ThemeColor.Success">
+                            <HxIcon Icon="BootstrapIcon.Clock"></HxIcon>
+                            <span class="ms-2">
+                                @($"{NextCronJobCyleTime}")
+                            </span>
+                        </HxBadge>
+                        <HxBadge CssClass="ms-2" Type="BadgeType.RoundedPill" Color="ThemeColor.Secondary">
+                            @if (!string.IsNullOrEmpty(TimeUntilCycleText))
+                            {
+                                <span>@TimeUntilCycleText</span>
+                            }
+                        </HxBadge>
+                    </h5>
+                }
+                else
+                {
+                    <HxIcon Icon="BootstrapIcon.Dash"></HxIcon>
+                }
             </div>
         </div>
     </div>
@@ -194,10 +194,14 @@
             if (CronJob is null)
                 CronJob = new(CronJobLogger, ApiService, CS);
 
-            CheckCronJobState(firstRender);
+            HandleCronJobState(CronJob.GetCronJobState());
 
-            CronJob.CronJobEvent += CronJobEvent;
-            CronJob.CronJobErrorEvent += CronJobErrorEvent;
+            if (base.ToString().IsFirstRender())
+            {
+                CronJob.CronJobDownloadsEvent += CronJobDownloads;
+                CronJob.CronJobEvent += CronJobEvent;
+                CronJob.CronJobErrorEvent += CronJobErrorEvent;
+            }
 
             ConverterService.ConvertProgressChanged += Converter_ConvertProgressChanged;
             ConverterService.ConverterStateChanged += Converter_ConverterStateChanged;
@@ -217,9 +221,13 @@
             {
                 TmNextCycle.Start();
             }
+
+            SetDownloadCounters();
         }
 
         base.OnAfterRender(firstRender);
+
+        PageFirstRenderHelper.ComponentSetRendered(base.ToString());
     }
 
     private void RefreshCycleTime(Object? source, System.Timers.ElapsedEventArgs e)
@@ -256,16 +264,6 @@
         InvokeAsync(() => StateHasChanged());
     }
 
-    private void CheckCronJobState(bool firstRender = false)
-    {
-        CronJobState cronJobState = CronJob.GetCronJobState();
-
-        if (!firstRender)
-        {
-            HandleCronJobState(cronJobState);
-        }
-    }
-
     private void MoveToConverterSettings()
     {
         NavigationManager.NavigateTo(Routes.ConverterSettings);
@@ -277,13 +275,17 @@
         InvokeAsync(() => StateHasChanged());
     }
 
-    private void CronJobEvent(CronJobState jobState, int downloadCount = 0, int languageDownloadCount = 0, bool forceUpdate = false)
+    private void CronJobDownloads(int downloadCount, int languageDownloadCount)
     {
-        if (jobState == CronJobState.Running || forceUpdate)
-        {
-            DownloadQueCount = downloadCount;
-            LanguageDownloadCount = languageDownloadCount;
-        }
+        DownloadQueCount = downloadCount;
+        LanguageDownloadCount = languageDownloadCount;
+
+        InvokeAsync(() => StateHasChanged());
+    }
+
+    private void CronJobEvent(CronJobState jobState)
+    {
+        CronJobState = jobState;
 
         if (CronJob.NextRun is null)
             return;
@@ -312,9 +314,17 @@
         }
     }
 
+    private void SetDownloadCounters()
+    {
+        DownloadQueCount = CronJob.DownloadCount;
+        LanguageDownloadCount = CronJob.LanguageDownloadCount;
+
+        InvokeAsync(() => StateHasChanged());
+    }
+
     private void HandleCronJobState(CronJobState jobState)
     {
-        CronJobState = jobState;
+        SetDownloadCounters();
 
         switch (jobState)
         {
@@ -332,7 +342,7 @@
                 EditConverterSettingsButtonEnabled = false;
                 break;
 
-            case CronJobState.CheckForDownloads:
+            case CronJobState.CheckingForDownloads:
                 CheckDownloadsButtonEnabled = false;
                 CheckDownloadsButtonSpinner = true;
                 ToastService.AddMessage(InfoMessage.CheckingForDownloads, 2000);

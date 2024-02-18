@@ -6,6 +6,8 @@ namespace AniWorldAutoDL_Webpanel.Models
     {
         [JsonProperty("ApiUrl")]
         public string ApiUrl { get; set; } = default!;
+        [JsonProperty("HostUrl")]
+        public string HostUrl { get; set; } = default!;
 
         [JsonProperty("User")]
         public UserModel User { get; set; } = default!;
