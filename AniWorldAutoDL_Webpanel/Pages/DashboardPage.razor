@@ -188,21 +188,13 @@
         {
             ConverterState = ConverterService.GetConverterState();
 
-            if (Download is null)
-                Download = ConverterService.GetDownload();
+            CronJob = new(CronJobLogger, ApiService, CS);
 
-            if (CronJob is null)
-                CronJob = new(CronJobLogger, ApiService, CS);
+            CronJob.RemoveHandlers();
 
-            HandleCronJobState(CronJob.GetCronJobState());
-
-            if (base.ToString().IsFirstRender())
-            {
-                CronJob.CronJobDownloadsEvent += CronJobDownloads;
-                CronJob.CronJobEvent += CronJobEvent;
-                CronJob.CronJobErrorEvent += CronJobErrorEvent;
-            }
-
+            CronJob.CronJobEvent += CronJobEvent;
+            CronJob.CronJobErrorEvent += CronJobErrorEvent;
+            CronJob.CronJobDownloadsEvent += CronJobDownloads;
             ConverterService.ConvertProgressChanged += Converter_ConvertProgressChanged;
             ConverterService.ConverterStateChanged += Converter_ConverterStateChanged;
 
@@ -223,11 +215,10 @@
             }
 
             SetDownloadCounters();
+            HandleCronJobState();
         }
 
         base.OnAfterRender(firstRender);
-
-        PageFirstRenderHelper.ComponentSetRendered(base.ToString());
     }
 
     private void RefreshCycleTime(Object? source, System.Timers.ElapsedEventArgs e)
@@ -285,12 +276,7 @@
 
     private void CronJobEvent(CronJobState jobState)
     {
-        CronJobState = jobState;
-
-        if (CronJob.NextRun is null)
-            return;
-
-        HandleCronJobState(jobState);
+        HandleCronJobState(true);
     }
 
     private void CronJobErrorEvent(Severity severity, string message)
@@ -318,15 +304,16 @@
     {
         DownloadQueCount = CronJob.DownloadCount;
         LanguageDownloadCount = CronJob.LanguageDownloadCount;
-
-        InvokeAsync(() => StateHasChanged());
     }
 
-    private void HandleCronJobState(CronJobState jobState)
+    private void HandleCronJobState(bool fromEvent = false)
     {
+        CronJobState = CronJob.CronJobState;
+
+        Download = ConverterService.GetDownload();
         SetDownloadCounters();
 
-        switch (jobState)
+        switch (CronJobState)
         {
             case CronJobState.WaitForNextCycle:
                 CheckDownloadsButtonEnabled = true;
@@ -351,7 +338,14 @@
                 break;
         }
 
-        InvokeAsync(() => StateHasChanged());
+        if (fromEvent)
+        {
+            InvokeAsync(() => StateHasChanged());
+        }
+        else
+        {
+            StateHasChanged();
+        }
     }
 
     private void Converter_ConverterStateChanged(ConverterState state, DownloadModel? download)
@@ -385,7 +379,7 @@
     private async Task CheckForDownloads()
     {
         if (CronJob is null)
-            return;
+            CronJob = new(CronJobLogger, ApiService, CS);
 
         await CronJob.CheckForNewDownloads();
     }

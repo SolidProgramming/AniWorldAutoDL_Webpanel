@@ -16,7 +16,7 @@ namespace AniWorldAutoDL_Webpanel.Classes
         public delegate void CronJobDownloadsEventHandler(int downloadCount, int languageDownloadCount);
         public static event CronJobDownloadsEventHandler? CronJobDownloadsEvent;
 
-        private static CronJobState CronJobState { get; set; } = CronJobState.WaitForNextCycle;
+        public static CronJobState CronJobState { get; set; }
 
         public static int Interval;
         public static DateTime? NextRun = default;
@@ -24,16 +24,20 @@ namespace AniWorldAutoDL_Webpanel.Classes
         public static int DownloadCount { get; set; }
         public static int LanguageDownloadCount { get; set; }
 
-        private void CronJob_CronJobEvent(CronJobState jobState)
+        private void SetCronJobState(CronJobState jobState)
         {
             CronJobState = jobState;
             logger.LogInformation($"{DateTime.Now} | {InfoMessage.CronJobChangedState} {jobState}");
+
+            CronJobEvent?.Invoke(jobState);
         }
 
-        private void CronJob_CronJobDownloadsEvent(int downloadCount, int languageDownloadCount)
+        private void SetCronJobDownloads(int downloadCount, int languageDownloadCount)
         {
             DownloadCount = downloadCount;
             LanguageDownloadCount = languageDownloadCount;
+
+            CronJobDownloadsEvent?.Invoke(downloadCount, languageDownloadCount);
         }
 
         public async Task Execute(IJobExecutionContext context)
@@ -55,15 +59,7 @@ namespace AniWorldAutoDL_Webpanel.Classes
 
                 return;
             }
-            else
-            {
-                CronJobEvent += CronJob_CronJobEvent;
-                CronJobDownloadsEvent += CronJob_CronJobDownloadsEvent;
-            }
-
-
-            CronJobEvent?.Invoke(CronJobState.CheckingForDownloads);
-
+            
             SettingsModel? settings = SettingsHelper.ReadSettings<SettingsModel>();
 
             if (settings is null || string.IsNullOrEmpty(settings.DownloadPath) || string.IsNullOrEmpty(settings.User.Username) || string.IsNullOrEmpty(settings.User.Password))
@@ -74,6 +70,8 @@ namespace AniWorldAutoDL_Webpanel.Classes
                 CronJobErrorEvent?.Invoke(Severity.Error, logMessage);
                 return;
             }
+
+            SetCronJobState(CronJobState.CheckingForDownloads);
 
             HosterModel? sto = HosterHelper.GetHosterByEnum(Hoster.STO);
             HosterModel? aniworld = HosterHelper.GetHosterByEnum(Hoster.AniWorld);
@@ -113,7 +111,7 @@ namespace AniWorldAutoDL_Webpanel.Classes
                 return;
             }
 
-            CronJobEvent?.Invoke(CronJobState.Running);
+            SetCronJobState(CronJobState.Running);
 
             downloadQue = downloads.EnqueueRange();
             ConverterService.CTS = new CancellationTokenSource();
@@ -129,7 +127,7 @@ namespace AniWorldAutoDL_Webpanel.Classes
 
                 string originalEpisodeName = episodeDownload.Download.Name;
 
-                CronJobDownloadsEvent?.Invoke(downloadQue.Count, 0);
+                SetCronJobDownloads(downloadQue.Count, 0);               
 
                 if (string.IsNullOrEmpty(episodeDownload.Download.Name))
                     continue;
@@ -195,7 +193,7 @@ namespace AniWorldAutoDL_Webpanel.Classes
 
                 foreach (Language language in downloadLanguages)
                 {
-                    CronJobDownloadsEvent?.Invoke(downloadQue.Count, downloadLanguages.Count() - finishedDownloadsCount);
+                    SetCronJobDownloads(downloadQue.Count, downloadLanguages.Count() - finishedDownloadsCount);
 
                     logMessage = $"{DateTime.Now} | ";
 
@@ -260,14 +258,36 @@ namespace AniWorldAutoDL_Webpanel.Classes
                     }
                 }
             }
-            CronJobDownloadsEvent?.Invoke(0, 0);
-            CronJobEvent?.Invoke(CronJobState.WaitForNextCycle);
+
+            SetCronJobDownloads(0, 0);
+            SetCronJobState(CronJobState.WaitForNextCycle);
         }
 
-        public static CronJobState GetCronJobState()
+        public static void RemoveHandlers()
         {
-            return CronJobState;
-        }
+            if (CronJobEvent is not null)
+            {
+                foreach (Delegate d in CronJobEvent.GetInvocationList())
+                {
+                    CronJobEvent -= (CronJobEventHandler)d;
+                }
+            }
 
+            if (CronJobErrorEvent is not null)
+            {
+                foreach (Delegate d in CronJobErrorEvent.GetInvocationList())
+                {
+                    CronJobErrorEvent -= (CronJobErrorEventHandler)d;
+                }
+            }
+
+            if (CronJobDownloadsEvent is not null)
+            {
+                foreach (Delegate d in CronJobDownloadsEvent.GetInvocationList())
+                {
+                    CronJobDownloadsEvent -= (CronJobDownloadsEventHandler)d;
+                }
+            }
+        }
     }
 }

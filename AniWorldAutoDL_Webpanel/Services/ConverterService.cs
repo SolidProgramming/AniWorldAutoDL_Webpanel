@@ -100,6 +100,7 @@ namespace AniWorldAutoDL_Webpanel.Services
             }
             finally
             {
+                Download = default;
                 ConverterStateChanged?.Invoke(ConverterState.Idle);
             }
 
