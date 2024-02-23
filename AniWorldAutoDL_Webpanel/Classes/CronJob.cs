@@ -322,7 +322,7 @@ namespace AniWorldAutoDL_Webpanel.Classes
         {
             Browser ??= await Puppeteer.LaunchAsync(new LaunchOptions
             {
-                Headless = false,
+                Headless = true,
             });
 
             using IPage? page = await Browser.NewPageAsync();
