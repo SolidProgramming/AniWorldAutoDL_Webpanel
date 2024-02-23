@@ -1,5 +1,6 @@
 ﻿using System.Text.RegularExpressions;
 using HtmlAgilityPack;
+using PuppeteerSharp;
 
 namespace AniWorldAutoDL_Webpanel.Misc
 {

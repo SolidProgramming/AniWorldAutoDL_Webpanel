@@ -1,10 +1,16 @@
 ﻿using CliWrap;
+using HtmlAgilityPack;
+using Microsoft.AspNetCore.Mvc.Filters;
+using PuppeteerSharp;
 using Quartz;
+using System.Text.RegularExpressions;
+using System.Timers;
+using System.Web;
 
 
 namespace AniWorldAutoDL_Webpanel.Classes
 {
-    internal class CronJob(ILogger<CronJob> logger, IApiService apiService, IConverterService converterService)
+    internal class CronJob(ILogger<CronJob> logger, IApiService apiService, IConverterService converterService, IHostApplicationLifetime appLifetime)
          : IJob
     {
         public delegate void CronJobEventHandler(CronJobState jobState);
@@ -21,8 +27,12 @@ namespace AniWorldAutoDL_Webpanel.Classes
         public static int Interval;
         public static DateTime? NextRun = default;
 
+        private IBrowser? Browser;
+
         public static int DownloadCount { get; set; }
         public static int LanguageDownloadCount { get; set; }
+
+        private bool RegisteredShutdown { get; set; }
 
         private void SetCronJobState(CronJobState jobState)
         {
@@ -42,6 +52,16 @@ namespace AniWorldAutoDL_Webpanel.Classes
 
         public async Task Execute(IJobExecutionContext context)
         {
+            if (!RegisteredShutdown)
+            {
+                appLifetime.ApplicationStopping.Register(async () =>
+                {
+                    await Abort();
+                });
+
+                RegisteredShutdown = true;
+            }
+
             NextRun = context!.NextFireTimeUtc!.Value.ToLocalTime().DateTime;
             await CheckForNewDownloads();
         }
@@ -59,7 +79,7 @@ namespace AniWorldAutoDL_Webpanel.Classes
 
                 return;
             }
-            
+
             SettingsModel? settings = SettingsHelper.ReadSettings<SettingsModel>();
 
             if (settings is null || string.IsNullOrEmpty(settings.DownloadPath) || string.IsNullOrEmpty(settings.User.Username) || string.IsNullOrEmpty(settings.User.Password))
@@ -127,7 +147,7 @@ namespace AniWorldAutoDL_Webpanel.Classes
 
                 string originalEpisodeName = episodeDownload.Download.Name;
 
-                SetCronJobDownloads(downloadQue.Count, 0);               
+                SetCronJobDownloads(downloadQue.Count, 0);
 
                 if (string.IsNullOrEmpty(episodeDownload.Download.Name))
                     continue;
@@ -207,7 +227,7 @@ namespace AniWorldAutoDL_Webpanel.Classes
                     }
                     else { continue; }
 
-                    string? m3u8Url = await HosterHelper.GetEpisodeM3U8(url);
+                    string? m3u8Url = await GetEpisodeM3U8(url);
 
                     if (string.IsNullOrEmpty(m3u8Url))
                         continue;
@@ -288,6 +308,63 @@ namespace AniWorldAutoDL_Webpanel.Classes
                     CronJobDownloadsEvent -= (CronJobDownloadsEventHandler)d;
                 }
             }
+        }
+
+        public async Task Abort()
+        {
+            if (Browser is not null)
+            {
+                await Browser.CloseAsync();
+            }
+        }
+
+        private async Task<string?> GetEpisodeM3U8(string streamUrl)
+        {
+            Browser ??= await Puppeteer.LaunchAsync(new LaunchOptions
+            {
+                Headless = false,
+            });
+
+            using IPage? page = await Browser.NewPageAsync();
+
+            try
+            {
+                await page.GoToAsync(streamUrl);
+                await page.WaitForSelectorAsync("div.voe-play");
+                await page.ClickAsync("div.voe-play");
+                await page.BringToFrontAsync();
+                await page.WaitForSelectorAsync("video > source[src^='https://delivery-node']", new WaitForSelectorOptions() { Timeout = 4000 });
+
+                string html = await page.GetContentAsync();
+
+                HtmlDocument htmlDocument = new();
+                htmlDocument.LoadHtml(html);
+
+                Match hlsMatch = new Regex("'hls': '(.*?)',").Match(html);
+
+                if (hlsMatch.Success)
+                {
+                    return HttpUtility.HtmlDecode(hlsMatch.Groups[1].Value);
+                }
+
+                Match sourceMatch = new Regex("<source src=\"(.*?)\" type=\"application/x-mpegurl\" data-vds=\"\">").Match(html);
+
+                if (sourceMatch.Success)
+                {
+                    return HttpUtility.HtmlDecode(sourceMatch.Groups[1].Value);
+                }
+
+                return default;
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+            finally
+            {
+                await Browser.CloseAsync();
+            }
+
         }
     }
 }

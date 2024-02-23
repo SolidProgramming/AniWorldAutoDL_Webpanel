@@ -8,6 +8,7 @@
 @inject IApiService ApiService
 @inject IConverterService CS
 @inject NavigationManager NavigationManager
+@inject IHostApplicationLifetime AppLifetime
 
 <div class="container">
     <table class="table">
@@ -188,7 +189,7 @@
         {
             ConverterState = ConverterService.GetConverterState();
 
-            CronJob = new(CronJobLogger, ApiService, CS);
+            CronJob = new(CronJobLogger, ApiService, CS, AppLifetime);
 
             CronJob.RemoveHandlers();
 
@@ -379,7 +380,7 @@
     private async Task CheckForDownloads()
     {
         if (CronJob is null)
-            CronJob = new(CronJobLogger, ApiService, CS);
+            CronJob = new(CronJobLogger, ApiService, CS, AppLifetime);
 
         await CronJob.CheckForNewDownloads();
     }

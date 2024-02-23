@@ -8,6 +8,11 @@ using Quartz;
 using Havit.Blazor.Components.Web;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using PuppeteerSharp;
+
+Console.WriteLine("Downloading Chrome");
+using var browserFetcher = new BrowserFetcher();
+await browserFetcher.DownloadAsync();
 
 SettingsModel? settings = SettingsHelper.ReadSettings<SettingsModel>();
 
