@@ -1,10 +1,8 @@
 ﻿using CliWrap;
 using HtmlAgilityPack;
-using Microsoft.AspNetCore.Mvc.Filters;
 using PuppeteerSharp;
 using Quartz;
 using System.Text.RegularExpressions;
-using System.Timers;
 using System.Web;
 
 
@@ -145,9 +143,9 @@ namespace AniWorldAutoDL_Webpanel.Classes
 
                 EpisodeDownloadModel episodeDownload = downloadQue.Dequeue();
 
-                string originalEpisodeName = episodeDownload.Download.Name;
-
                 SetCronJobDownloads(downloadQue.Count, 0);
+
+                string originalEpisodeName = episodeDownload.Download.Name;
 
                 if (string.IsNullOrEmpty(episodeDownload.Download.Name))
                     continue;
@@ -156,11 +154,11 @@ namespace AniWorldAutoDL_Webpanel.Classes
 
                 if (episodeDownload.StreamingPortal.Name == "S.TO")
                 {
-                    url = $"https://s.to/serie/stream/{episodeDownload.Download.Name.UrlSanitize()}/{string.Format(Globals.LinkBlueprint, episodeDownload.Download.Season, episodeDownload.Download.Episode)}";
+                    url = $"https://s.to/serie/stream{episodeDownload.Download.Path}/{string.Format(Globals.LinkBlueprint, episodeDownload.Download.Season, episodeDownload.Download.Episode)}";
                 }
                 else if (episodeDownload.StreamingPortal.Name == "AniWorld")
                 {
-                    url = $"https://aniworld.to/anime/stream/{episodeDownload.Download.Name.UrlSanitize()}/{string.Format(Globals.LinkBlueprint, episodeDownload.Download.Season, episodeDownload.Download.Episode)}";
+                    url = $"https://aniworld.to/anime/stream{episodeDownload.Download.Path}/{string.Format(Globals.LinkBlueprint, episodeDownload.Download.Season, episodeDownload.Download.Episode)}";
                 }
                 else { continue; }
 
@@ -260,7 +258,7 @@ namespace AniWorldAutoDL_Webpanel.Classes
 
                         if (finishedDownloadsCount >= downloadLanguages.Count())
                         {
-                            bool removeSuccess = await apiService.RemoveFinishedDownload(episodeDownload.Download.Id.ToString());
+                            bool removeSuccess = await apiService.RemoveFinishedDownload(episodeDownload);
 
                             logMessage = $"{DateTime.Now} | ";
 
@@ -363,6 +361,7 @@ namespace AniWorldAutoDL_Webpanel.Classes
             finally
             {
                 await Browser.CloseAsync();
+                Browser = default;
             }
 
         }

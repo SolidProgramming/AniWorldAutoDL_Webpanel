@@ -56,9 +56,9 @@ namespace AniWorldAutoDL_Webpanel.Services
 
             return true;
         }
-        public async Task<bool> RemoveFinishedDownload(string downloadId)
+        public async Task<bool> RemoveFinishedDownload(EpisodeDownloadModel download)
         {
-            return await PostAsync<bool>("removeFinishedDownload", downloadId);
+            return await PostAsync<bool>("removeFinishedDownload", download);
         }
         public async Task<T?> GetAsync<T>(string uri)
         {

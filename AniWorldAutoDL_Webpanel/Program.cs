@@ -10,10 +10,6 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using PuppeteerSharp;
 
-Console.WriteLine("Downloading Chrome");
-using var browserFetcher = new BrowserFetcher();
-await browserFetcher.DownloadAsync();
-
 SettingsModel? settings = SettingsHelper.ReadSettings<SettingsModel>();
 
 if (AnotherInstanceExists())
@@ -21,6 +17,29 @@ if (AnotherInstanceExists())
     OpenBrowser(settings.HostUrl);
     return;
 }
+
+HosterModel? sto = HosterHelper.GetHosterByEnum(Hoster.STO);
+HosterModel? aniworld = HosterHelper.GetHosterByEnum(Hoster.AniWorld);
+
+bool hosterReachableSTO = await HosterHelper.HosterReachable(sto);
+
+if (!hosterReachableSTO)
+{
+    OpenBrowser(sto.BrowserUrl);
+    return;
+}
+
+bool hosterReachableAniworld = await HosterHelper.HosterReachable(aniworld);
+
+if (!hosterReachableAniworld)
+{
+    OpenBrowser(aniworld.BrowserUrl);
+    return;
+}
+
+Console.WriteLine("Downloading Chrome");
+using var browserFetcher = new BrowserFetcher();
+await browserFetcher.DownloadAsync();
 
 WebApplicationBuilder? builder = WebApplication.CreateBuilder(args);
 
