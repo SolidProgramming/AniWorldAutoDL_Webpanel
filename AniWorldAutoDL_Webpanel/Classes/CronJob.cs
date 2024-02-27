@@ -19,8 +19,9 @@ namespace AniWorldAutoDL_Webpanel.Classes
 
         public delegate void CronJobDownloadsEventHandler(int downloadCount, int languageDownloadCount);
         public static event CronJobDownloadsEventHandler? CronJobDownloadsEvent;
-
         public static CronJobState CronJobState { get; set; }
+
+        public static Queue<EpisodeDownloadModel>? DownloadQue;
 
         public static int Interval;
         public static DateTime? NextRun = default;
@@ -121,7 +122,7 @@ namespace AniWorldAutoDL_Webpanel.Classes
             }
 
             IEnumerable<EpisodeDownloadModel>? downloads = await apiService.GetAsync<IEnumerable<EpisodeDownloadModel>?>("getDownloads", new() { { "username", settings.User.Username } });
-            Queue<EpisodeDownloadModel>? downloadQue;
+            
 
             if (downloads is null || !downloads.Any())
             {
@@ -131,19 +132,19 @@ namespace AniWorldAutoDL_Webpanel.Classes
 
             SetCronJobState(CronJobState.Running);
 
-            downloadQue = downloads.EnqueueRange();
+            DownloadQue = downloads.EnqueueRange();
             ConverterService.CTS = new CancellationTokenSource();
 
-            while (downloadQue?.Count != 0)
+            while (DownloadQue?.Count != 0)
             {
                 if (ConverterService.CTS is not null && ConverterService.CTS.IsCancellationRequested)
                     break;
 
                 logMessage = $"{DateTime.Now} | ";
 
-                EpisodeDownloadModel episodeDownload = downloadQue.Dequeue();
+                EpisodeDownloadModel episodeDownload = DownloadQue.Dequeue();
 
-                SetCronJobDownloads(downloadQue.Count, 0);
+                SetCronJobDownloads(DownloadQue.Count, 0);
 
                 string originalEpisodeName = episodeDownload.Download.Name;
 
@@ -211,7 +212,7 @@ namespace AniWorldAutoDL_Webpanel.Classes
 
                 foreach (Language language in downloadLanguages)
                 {
-                    SetCronJobDownloads(downloadQue.Count, downloadLanguages.Count() - finishedDownloadsCount);
+                    SetCronJobDownloads(DownloadQue.Count, downloadLanguages.Count() - finishedDownloadsCount);
 
                     logMessage = $"{DateTime.Now} | ";
 

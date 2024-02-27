@@ -1,0 +1,109 @@
+﻿
+<div class="container mt-5">
+    <table class="table">
+        <thead>
+            <tr>
+                <th scope="col" class="text-center" style="font-family: 'Roboto', sans-serif;">#</th>
+                <th scope="col" class="text-center" style="font-family: 'Roboto', sans-serif;">Name</th>
+                <th scope="col" class="text-center" style="font-family: 'Roboto', sans-serif;">Staffel</th>
+                <th scope="col" class="text-center" style="font-family: 'Roboto', sans-serif;">Episode</th>
+                <th scope="col" class="text-center"></th>
+                <th scope="col"></th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Downloads is not null)
+            {
+                int i = 1;
+
+                @foreach (EpisodeDownloadModel download in Downloads.Take(8))
+                {
+                    @if(i == 1)
+                    {
+                        TextClass = "text-warning";
+                    }
+                    else
+                    {
+                        TextClass = "";
+                    }
+                    <tr>
+                        <td class="text-center align-middle @TextClass" width="50" style="font-family: 'Roboto', sans-serif;">
+                            @if(i == 1)
+                            {
+                                <span>Next</span>
+                            }
+                            else
+                            {
+                                <span>@i</span>
+                            }
+                        </td>
+                        <td class="text-center align-middle @TextClass" style="font-family: 'Roboto', sans-serif;">
+                            @download.Download.Name
+                        </td>
+                        <td class="text-center align-middle @TextClass" width="70" style="font-family: 'Roboto', sans-serif;">
+                            @($"S{download.Download.Season:D2}")
+                        </td>
+                        <td class="text-center align-middle @TextClass" width="70" style="font-family: 'Roboto', sans-serif;">
+                            @($"E{download.Download.Episode:D2}")
+                        </td>
+                        <td class="text-center align-middle" width="90">                            
+                                <LanguageFlagComponent Languages="@download.Download.LanguageFlag"></LanguageFlagComponent>                           
+                        </td>
+                        <td class="text-center align-middle" width="150">
+                            <HxButton Color="ThemeColor.Danger" Icon="BootstrapIcon.XLg" ></HxButton>
+                        </td>
+                    </tr>
+                    i++;
+                }
+               
+            }
+        </tbody>
+    </table>
+    <div class="row">
+        <HxButton Color="ThemeColor.Dark" Icon="BootstrapIcon.ArrowsExpand"></HxButton>
+    </div>
+</div>
+
+@code {
+    private string? TextClass { get; set; }
+    private List<EpisodeDownloadModel>? Downloads;
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        CronJob.CronJobEvent += CronJobEvent;
+        //CronJob.CronJobErrorEvent += CronJobErrorEvent;
+        CronJob.CronJobDownloadsEvent += CronJobDownloads;
+    }
+
+    private void CronJobDownloads(int downloadCount, int languageDownloadCount)
+    {
+        Downloads = CronJob.DownloadQue?.ToList();
+
+        InvokeAsync(() => StateHasChanged());
+    }
+
+    private void CronJobEvent(CronJobState jobState)
+    {
+        switch (jobState)
+        {
+            case CronJobState.WaitForNextCycle:
+                
+                break;
+
+            case CronJobState.Running:
+               
+                break;
+
+            case CronJobState.CheckingForDownloads:
+                
+                break;
+            default:
+                break;
+        }
+    }
+
+    private void CronJobErrorEvent(Severity severity, string message)
+    {
+        
+    }
+}
