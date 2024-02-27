@@ -18,7 +18,7 @@
 
                 @foreach (EpisodeDownloadModel download in Downloads.Take(8))
                 {
-                    @if(i == 1)
+                    @if (i == 1)
                     {
                         TextClass = "text-warning";
                     }
@@ -28,7 +28,7 @@
                     }
                     <tr>
                         <td class="text-center align-middle @TextClass" width="50" style="font-family: 'Roboto', sans-serif;">
-                            @if(i == 1)
+                            @if (i == 1)
                             {
                                 <span>Next</span>
                             }
@@ -46,21 +46,35 @@
                         <td class="text-center align-middle @TextClass" width="70" style="font-family: 'Roboto', sans-serif;">
                             @($"E{download.Download.Episode:D2}")
                         </td>
-                        <td class="text-center align-middle" width="90">                            
-                                <LanguageFlagComponent Languages="@download.Download.LanguageFlag"></LanguageFlagComponent>                           
+                        <td class="text-center align-middle" width="90">
+                            <LanguageFlagComponent Languages="@download.Download.LanguageFlag"></LanguageFlagComponent>
                         </td>
                         <td class="text-center align-middle" width="150">
-                            <HxButton Color="ThemeColor.Danger" Icon="BootstrapIcon.XLg" ></HxButton>
+                            <HxButton Color="ThemeColor.Danger" Icon="BootstrapIcon.XLg"></HxButton>
                         </td>
                     </tr>
                     i++;
                 }
-               
+
             }
         </tbody>
     </table>
     <div class="row">
-        <HxButton Color="ThemeColor.Dark" Icon="BootstrapIcon.ArrowsExpand"></HxButton>
+        @if (Downloads is not null)
+        {
+            <HxButton Color="ThemeColor.Dark" Icon="BootstrapIcon.ArrowsExpand"></HxButton>
+        }
+        else
+        {
+            <h5 class="text-center align-middle">
+                <HxBadge Type="BadgeType.RoundedPill" Color="ThemeColor.Secondary">
+                    <HxIcon Icon="BootstrapIcon.FileEarmarkPlus"></HxIcon>
+                    <span>
+                        0
+                    </span>
+                </HxBadge>
+            </h5>
+        }
     </div>
 </div>
 
@@ -78,24 +92,25 @@
     private void CronJobDownloads(int downloadCount, int languageDownloadCount)
     {
         Downloads = CronJob.DownloadQue?.ToList();
-
-        InvokeAsync(() => StateHasChanged());
     }
 
     private void CronJobEvent(CronJobState jobState)
     {
+        if (Downloads is null || Downloads.Count == 0)
+            return;
+
         switch (jobState)
         {
             case CronJobState.WaitForNextCycle:
-                
+
                 break;
 
             case CronJobState.Running:
-               
+                InvokeAsync(() => StateHasChanged());
                 break;
 
             case CronJobState.CheckingForDownloads:
-                
+
                 break;
             default:
                 break;
@@ -104,6 +119,6 @@
 
     private void CronJobErrorEvent(Severity severity, string message)
     {
-        
+
     }
 }
