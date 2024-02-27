@@ -64,14 +64,22 @@
         {
             <HxButton Color="ThemeColor.Dark" Icon="BootstrapIcon.ArrowsExpand"></HxButton>
         }
+        else if (Downloads is null && CronJobState == CronJobState.CheckingForDownloads)
+        {
+            <h5 class="text-center align-middle">
+                <HxBadge Type="BadgeType.RoundedPill" Color="ThemeColor.Secondary">
+                    <HxIcon Icon="BootstrapIcon.FileEarmarkPlus"></HxIcon>
+                    
+                </HxBadge>
+                <HxSpinner CssClass="ms-1" Color="ThemeColor.Secondary" Size="SpinnerSize.Small"></HxSpinner>
+            </h5>
+        }
         else
         {
             <h5 class="text-center align-middle">
                 <HxBadge Type="BadgeType.RoundedPill" Color="ThemeColor.Secondary">
                     <HxIcon Icon="BootstrapIcon.FileEarmarkPlus"></HxIcon>
-                    <span>
-                        0
-                    </span>
+                    <span class="ms-1">0</span>
                 </HxBadge>
             </h5>
         }
@@ -81,6 +89,7 @@
 @code {
     private string? TextClass { get; set; }
     private List<EpisodeDownloadModel>? Downloads;
+    private CronJobState CronJobState = CronJobState.WaitForNextCycle;
 
     protected override void OnAfterRender(bool firstRender)
     {
@@ -92,29 +101,30 @@
     private void CronJobDownloads(int downloadCount, int languageDownloadCount)
     {
         Downloads = CronJob.DownloadQue?.ToList();
+
+        InvokeAsync(() => StateHasChanged());
     }
 
     private void CronJobEvent(CronJobState jobState)
     {
-        if (Downloads is null || Downloads.Count == 0)
-            return;
+        CronJobState = CronJob.CronJobState;
 
         switch (jobState)
         {
             case CronJobState.WaitForNextCycle:
-
+                Downloads = null;
                 break;
 
             case CronJobState.Running:
-                InvokeAsync(() => StateHasChanged());
                 break;
 
             case CronJobState.CheckingForDownloads:
-
                 break;
             default:
                 break;
         }
+
+        InvokeAsync(() => StateHasChanged());
     }
 
     private void CronJobErrorEvent(Severity severity, string message)
