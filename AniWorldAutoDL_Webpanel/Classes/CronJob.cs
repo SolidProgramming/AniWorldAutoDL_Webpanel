@@ -22,6 +22,7 @@ namespace AniWorldAutoDL_Webpanel.Classes
         public static CronJobState CronJobState { get; set; }
 
         public static Queue<EpisodeDownloadModel>? DownloadQue;
+        public static List<EpisodeDownloadModel> SkippedDownloads = [];
 
         public static int Interval;
         public static DateTime? NextRun = default;
@@ -121,9 +122,10 @@ namespace AniWorldAutoDL_Webpanel.Classes
                 return;
             }
 
+            SkippedDownloads.Clear();
+
             IEnumerable<EpisodeDownloadModel>? downloads = await apiService.GetAsync<IEnumerable<EpisodeDownloadModel>?>("getDownloads", new() { { "username", settings.User.Username } });
             
-
             if (downloads is null || !downloads.Any())
             {
                 CronJobEvent?.Invoke(CronJobState.WaitForNextCycle);
@@ -143,6 +145,11 @@ namespace AniWorldAutoDL_Webpanel.Classes
                 logMessage = $"{DateTime.Now} | ";
 
                 EpisodeDownloadModel episodeDownload = DownloadQue.Dequeue();
+
+                if (SkippedDownloads.Contains(episodeDownload))
+                {
+                    continue;
+                }
 
                 SetCronJobDownloads(DownloadQue.Count, 0);
 

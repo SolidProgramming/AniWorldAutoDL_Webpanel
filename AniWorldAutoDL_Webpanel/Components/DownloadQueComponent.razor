@@ -1,4 +1,6 @@
-﻿
+﻿@inject IHxMessengerService ToastService
+@inject ILogger<DownloadQueComponent> DownloadQueComponentLogger
+
 <div class="container mt-5">
     <table class="table">
         <thead>
@@ -8,6 +10,7 @@
                 <th scope="col" class="text-center" style="font-family: 'Roboto', sans-serif;">Staffel</th>
                 <th scope="col" class="text-center" style="font-family: 'Roboto', sans-serif;">Episode</th>
                 <th scope="col" class="text-center"></th>
+                <th scope="col"></th>
                 <th scope="col"></th>
             </tr>
         </thead>
@@ -49,7 +52,10 @@
                         <td class="text-center align-middle" width="90">
                             <LanguageFlagComponent Languages="@download.Download.LanguageFlag"></LanguageFlagComponent>
                         </td>
-                        <td class="text-center align-middle" width="150">
+                        <td class="text-center align-middle" width="50">
+                            <HxButton OnClick="@(() => SkipDownload(download))" Color="ThemeColor.Secondary" Icon="BootstrapIcon.SkipForwardFill"></HxButton>
+                        </td>
+                        <td class="text-center align-middle" width="50">
                             <HxButton Color="ThemeColor.Danger" Icon="BootstrapIcon.XLg"></HxButton>
                         </td>
                     </tr>
@@ -87,6 +93,9 @@
 </div>
 
 @code {
+    [Parameter]
+    public EventCallback<int> OnDownloadSkipped { get; set; }
+
     private string? TextClass { get; set; }
     private List<EpisodeDownloadModel>? Downloads;
     private CronJobState CronJobState = CronJobState.WaitForNextCycle;
@@ -99,7 +108,7 @@
             //CronJob.CronJobErrorEvent += CronJobErrorEvent;
             CronJob.CronJobDownloadsEvent += CronJobDownloads;
 
-            Downloads = CronJob.DownloadQue?.ToList();
+            Downloads = CronJob.DownloadQue?.ToList().Except(CronJob.SkippedDownloads).ToList();
             StateHasChanged();
         }
     }
@@ -136,5 +145,26 @@
     private void CronJobErrorEvent(Severity severity, string message)
     {
 
+    }
+
+    private void SkipDownload(EpisodeDownloadModel download)
+    {
+        bool? removed = Downloads?.Remove(download);
+
+        if (removed is null || !removed.Value)
+        {
+            ToastService.AddMessage(ErrorMessage.SkipDownloadFail, 5000, ThemeColor.Danger);
+            DownloadQueComponentLogger.LogError(ErrorMessage.SkipDownloadFail);
+            return;
+        }
+
+        CronJob.SkippedDownloads.Add(download);
+
+        StateHasChanged();
+
+        ToastService.AddMessage(InfoMessage.EpisodeDownloadSkipped, 2000, ThemeColor.Info);
+        DownloadQueComponentLogger.LogInformation(InfoMessage.EpisodeDownloadSkipped);
+
+        OnDownloadSkipped.InvokeAsync(Downloads!.Count);
     }
 }

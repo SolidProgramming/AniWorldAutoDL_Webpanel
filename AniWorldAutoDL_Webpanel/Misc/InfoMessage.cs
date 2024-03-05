@@ -11,5 +11,6 @@
         internal const string CronJobInit = "Cron Job initialized.";
         internal const string CronJobChangedState = "Cron Job changed state to:";
         internal const string CronJobRunning = "Cron Job is currently running. Skipping...";
+        internal const string EpisodeDownloadSkipped = "Download übersprungen. Episode wird beim nächsten Durchgang heruntergeladen.";
     }
 }

@@ -14,5 +14,6 @@
         internal const string ConverterServiceNotInitialized = "Converter Service is not initialized! Call IConverterService.Init() on startup.";
         internal const string CronJobNotInitialized = "Cron Job/Service is not initialized! Call c on startup.";
         internal const string HttpRequestException = "Error requesting data from hoster!";
+        internal const string SkipDownloadFail = "Beim überspringen des Downloads für die ausgewählte Episode ist ein Fehler aufgetreten!";
     }
 }

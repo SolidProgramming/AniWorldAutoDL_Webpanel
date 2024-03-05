@@ -157,7 +157,7 @@
         </div>
     </div>
 </div>
-<DownloadQueComponent></DownloadQueComponent>
+<DownloadQueComponent OnDownloadSkipped="@OnDownloadSkipped"></DownloadQueComponent>
 
 
 @code {
@@ -389,5 +389,10 @@
     private void StopConverter()
     {
         ConverterService.Abort();
+    }
+
+    private void OnDownloadSkipped(int newDownloadCount)
+    {
+        DownloadQueCount = newDownloadCount;
     }
 }
