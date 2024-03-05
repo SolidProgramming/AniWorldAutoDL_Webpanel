@@ -93,9 +93,15 @@
 
     protected override void OnAfterRender(bool firstRender)
     {
-        CronJob.CronJobEvent += CronJobEvent;
-        //CronJob.CronJobErrorEvent += CronJobErrorEvent;
-        CronJob.CronJobDownloadsEvent += CronJobDownloads;
+        if (firstRender)
+        {
+            CronJob.CronJobEvent += CronJobEvent;
+            //CronJob.CronJobErrorEvent += CronJobErrorEvent;
+            CronJob.CronJobDownloadsEvent += CronJobDownloads;
+
+            Downloads = CronJob.DownloadQue?.ToList();
+            StateHasChanged();
+        }
     }
 
     private void CronJobDownloads(int downloadCount, int languageDownloadCount)
