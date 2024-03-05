@@ -20,7 +20,7 @@
             {
                 int i = 1;
 
-                @foreach (EpisodeDownloadModel download in Downloads.Take(8))
+                @foreach (EpisodeDownloadModel download in Downloads.Take(VisibleQueueEntriesCount))
                 {
                     @if (i == 1)
                     {
@@ -69,7 +69,7 @@
     <div class="row">
         @if (Downloads is not null)
         {
-            <HxButton Color="ThemeColor.Dark" Icon="BootstrapIcon.ArrowsExpand"></HxButton>
+            <HxButton OnClick="IncreaseVisibleQueueEntriesCount" Color="ThemeColor.Dark" Icon="BootstrapIcon.ArrowsExpand"></HxButton>
         }
         else if (Downloads is null && CronJobState == CronJobState.CheckingForDownloads)
         {
@@ -100,6 +100,8 @@
     private string? TextClass { get; set; }
     private List<EpisodeDownloadModel>? Downloads;
     private CronJobState CronJobState = CronJobState.WaitForNextCycle;
+
+    private int VisibleQueueEntriesCount { get; set; } = 8;
 
     protected override void OnAfterRender(bool firstRender)
     {
@@ -196,5 +198,20 @@
         StateHasChanged();        
 
         await OnDownloadSkippOrRemove.InvokeAsync(Downloads!.Count);
+    }
+
+    private void IncreaseVisibleQueueEntriesCount()
+    {
+        if (Downloads is null || Downloads.Count == 0)
+            return;
+
+        int newEntriesCount = VisibleQueueEntriesCount + 5;
+
+        if (newEntriesCount > Downloads.Count)
+        {
+            newEntriesCount = Downloads.Count;
+        }
+
+        VisibleQueueEntriesCount = newEntriesCount;
     }
 }
