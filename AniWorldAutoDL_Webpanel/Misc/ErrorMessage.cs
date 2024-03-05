@@ -15,5 +15,7 @@
         internal const string CronJobNotInitialized = "Cron Job/Service is not initialized! Call c on startup.";
         internal const string HttpRequestException = "Error requesting data from hoster!";
         internal const string SkipDownloadFail = "Beim überspringen des Downloads für die ausgewählte Episode ist ein Fehler aufgetreten!";
+        internal const string RemoveDownloadFail = "Beim löschen des Downloads für die ausgewählte Episode ist ein Fehler aufgetreten!";
+        internal const string RemoveDBEpisodeDownloadFail = "Beim löschen des Downloads auf Datenbankebene ist ein Fehler aufgetreten!";
     }
 }

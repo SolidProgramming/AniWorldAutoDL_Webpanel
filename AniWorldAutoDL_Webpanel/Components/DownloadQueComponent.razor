@@ -1,5 +1,6 @@
 ﻿@inject IHxMessengerService ToastService
 @inject ILogger<DownloadQueComponent> DownloadQueComponentLogger
+@inject IApiService ApiService
 
 <div class="container mt-5">
     <table class="table">
@@ -56,7 +57,7 @@
                             <HxButton OnClick="@(() => SkipDownload(download))" Color="ThemeColor.Secondary" Icon="BootstrapIcon.SkipForwardFill"></HxButton>
                         </td>
                         <td class="text-center align-middle" width="50">
-                            <HxButton Color="ThemeColor.Danger" Icon="BootstrapIcon.XLg"></HxButton>
+                            <HxButton OnClick="@(() => RemoveDownloadFromQueue(download))" Color="ThemeColor.Danger" Icon="BootstrapIcon.XLg"></HxButton>
                         </td>
                     </tr>
                     i++;
@@ -94,7 +95,7 @@
 
 @code {
     [Parameter]
-    public EventCallback<int> OnDownloadSkipped { get; set; }
+    public EventCallback<int> OnDownloadSkippOrRemove { get; set; }
 
     private string? TextClass { get; set; }
     private List<EpisodeDownloadModel>? Downloads;
@@ -165,6 +166,35 @@
         ToastService.AddMessage(InfoMessage.EpisodeDownloadSkipped, 2000, ThemeColor.Info);
         DownloadQueComponentLogger.LogInformation(InfoMessage.EpisodeDownloadSkipped);
 
-        OnDownloadSkipped.InvokeAsync(Downloads!.Count);
+        OnDownloadSkippOrRemove.InvokeAsync(Downloads!.Count);
+    }
+
+    private async Task RemoveDownloadFromQueue(EpisodeDownloadModel download)
+    {
+        bool? removed = Downloads?.Remove(download);
+
+        if (removed is null || !removed.Value)
+        {
+            ToastService.AddMessage(ErrorMessage.RemoveDownloadFail, 5000, ThemeColor.Danger);
+            DownloadQueComponentLogger.LogError(ErrorMessage.RemoveDownloadFail);
+            return;
+        }
+
+        bool removeSuccess = await ApiService.RemoveFinishedDownload(download);
+
+        if (removeSuccess)
+        {
+            DownloadQueComponentLogger.LogInformation(InfoMessage.DownloadDBRemoved);
+            ToastService.AddMessage(InfoMessage.DownloadDBRemoved, 5000, ThemeColor.Info);
+        }
+        else
+        {
+            DownloadQueComponentLogger.LogError(ErrorMessage.RemoveDBEpisodeDownloadFail);
+            ToastService.AddMessage(ErrorMessage.RemoveDBEpisodeDownloadFail, 5000, ThemeColor.Danger);
+        }
+
+        StateHasChanged();        
+
+        await OnDownloadSkippOrRemove.InvokeAsync(Downloads!.Count);
     }
 }
