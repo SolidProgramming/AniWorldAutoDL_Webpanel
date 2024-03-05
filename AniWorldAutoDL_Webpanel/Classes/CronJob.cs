@@ -329,10 +329,10 @@ namespace AniWorldAutoDL_Webpanel.Classes
             try
             {
                 await page.GoToAsync(streamUrl);
-                await page.WaitForSelectorAsync("div.voe-play");
-                await page.ClickAsync("div.voe-play");
+                await page.WaitForSelectorAsync("body > div:nth-child(7) > div > button", new WaitForSelectorOptions { Timeout = 4000 });
+                await page.ClickAsync("body > div:nth-child(7) > div > button");
                 await page.BringToFrontAsync();
-                await page.WaitForSelectorAsync("video > source[src^='https://delivery-node']", new WaitForSelectorOptions() { Timeout = 4000 });
+                await page.WaitForSelectorAsync("body > div:nth-child(7) > div > button", new WaitForSelectorOptions() { Timeout = 4000 });
 
                 string html = await page.GetContentAsync();
 
