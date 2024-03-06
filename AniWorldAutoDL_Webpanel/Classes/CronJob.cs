@@ -246,6 +246,16 @@ namespace AniWorldAutoDL_Webpanel.Classes
 
                     if (ConverterService.CTS is not null && ( result is null || !result.IsSuccess ))
                     {
+                        if (result is null)
+                        {
+                            logMessage += $"{InfoMessage.EpisodeDownloadSkippedFileExists}";
+                            CronJobErrorEvent?.Invoke(Severity.Information, logMessage);
+
+                            await RemoveDownload(episodeDownload);
+
+                            continue;
+                        }
+
                         if (ConverterService.CTS.IsCancellationRequested)
                         {
                             logMessage += $"{WarningMessage.DownloadCanceled} {WarningMessage.DownloadNotRemoved}";
@@ -265,22 +275,7 @@ namespace AniWorldAutoDL_Webpanel.Classes
                         CronJobErrorEvent?.Invoke(Severity.Information, logMessage);
 
                         if (finishedDownloadsCount >= downloadLanguages.Count())
-                        {
-                            bool removeSuccess = await apiService.RemoveFinishedDownload(episodeDownload);
-
-                            logMessage = $"{DateTime.Now} | ";
-
-                            if (removeSuccess)
-                            {
-                                logMessage += InfoMessage.DownloadDBRemoved;
-                                CronJobErrorEvent?.Invoke(Severity.Information, logMessage);
-                            }
-                            else
-                            {
-                                logMessage += WarningMessage.DownloadNotRemoved;
-                                CronJobErrorEvent?.Invoke(Severity.Warning, logMessage);
-                            }
-                        }
+                            await RemoveDownload(episodeDownload);
                     }
                 }
             }
@@ -336,10 +331,10 @@ namespace AniWorldAutoDL_Webpanel.Classes
             try
             {
                 await page.GoToAsync(streamUrl);
-                await page.WaitForSelectorAsync("body > div:nth-child(7) > div > button", new WaitForSelectorOptions { Timeout = 4000 });
-                await page.ClickAsync("body > div:nth-child(7) > div > button");
+                await page.WaitForSelectorAsync("button.plyr__control.plyr__control--overlaid", new WaitForSelectorOptions { Timeout = 4000 });
+                await page.ClickAsync("button.plyr__control.plyr__control--overlaid");
                 await page.BringToFrontAsync();
-                await page.WaitForSelectorAsync("body > div:nth-child(7) > div > button", new WaitForSelectorOptions() { Timeout = 4000 });
+                await page.WaitForSelectorAsync("button.plyr__control.plyr__control--overlaid", new WaitForSelectorOptions() { Timeout = 4000 });
 
                 string html = await page.GetContentAsync();
 
@@ -362,8 +357,9 @@ namespace AniWorldAutoDL_Webpanel.Classes
 
                 return default;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                await Console.Out.WriteLineAsync(   ex.ToString());
                 return null;
             }
             finally
@@ -372,6 +368,24 @@ namespace AniWorldAutoDL_Webpanel.Classes
                 Browser = default;
             }
 
+        }
+
+        private async Task RemoveDownload(EpisodeDownloadModel episodeDownload)
+        {
+            bool removeSuccess = await apiService.RemoveFinishedDownload(episodeDownload);
+
+            string logMessage = $"{DateTime.Now} | ";
+
+            if (removeSuccess)
+            {
+                logMessage += InfoMessage.DownloadDBRemoved;
+                CronJobErrorEvent?.Invoke(Severity.Information, logMessage);
+            }
+            else
+            {
+                logMessage += WarningMessage.DownloadNotRemoved;
+                CronJobErrorEvent?.Invoke(Severity.Warning, logMessage);
+            }
         }
     }
 }

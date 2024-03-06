@@ -1,4 +1,5 @@
 ﻿using CliWrap;
+using System;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -66,6 +67,8 @@ namespace AniWorldAutoDL_Webpanel.Services
 
             ConverterStateChanged?.Invoke(ConverterState.Downloading, download);
 
+            string filePath = GetFileName(download, downloadPath);
+
             TimeSpan streamDuration = await GetStreamDuration(streamUrl);
 
             if (streamDuration == TimeSpan.Zero)
@@ -75,7 +78,19 @@ namespace AniWorldAutoDL_Webpanel.Services
 
             Download = download;
 
-            string args = $"-y -i \"{streamUrl}\" -acodec copy -vcodec copy -sn \"{GetFileName(Download, downloadPath)}\" -f matroska";
+            if (File.Exists(filePath))
+            {
+                TimeSpan durationExistingFile = TimeSpan.Zero;
+                durationExistingFile = await GetStreamDurationFromFile(filePath);
+
+                if (durationExistingFile.Minutes == streamDuration.Minutes && durationExistingFile.Seconds == streamDuration.Seconds)
+                {
+                    logger.LogInformation($"{DateTime.Now} | {InfoMessage.EpisodeDownloadSkippedFileExists}");
+                    return default;
+                }                   
+            }
+
+            string args = $"-y -i \"{streamUrl}\" -acodec copy -vcodec copy -sn \"{filePath}\" -f matroska";
 
             string binPath = Helper.GetFFMPEGPath();
 
@@ -231,6 +246,45 @@ namespace AniWorldAutoDL_Webpanel.Services
 
 
             return TimeSpan.Parse(stdOut);
+        }
+
+        private static async Task<TimeSpan> GetStreamDurationFromFile(string filePath)
+        {
+            StringBuilder StdOutBuffer = new();
+
+            string? binPath = Helper.GetFFProbePath();
+
+            string arguments = $"-v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 -sexagesimal \"{filePath}\"";
+
+            CancellationTokenSource ffProbeCTS = new(TimeSpan.FromSeconds(5));
+            CancellationToken ffProbeToken = ffProbeCTS.Token;
+
+            try
+            {
+                await Cli.Wrap(binPath!)
+                         .WithArguments(arguments)
+                         .WithValidation(CommandResultValidation.None)
+                             .WithStandardOutputPipe(PipeTarget.ToStringBuilder(StdOutBuffer))
+                                 //.WithStandardErrorPipe(PipeTarget.ToStringBuilder(StdErrBuffer))
+                                 .ExecuteAsync(ffProbeToken);
+            }
+            catch (OperationCanceledException)
+            {
+                return TimeSpan.Zero;
+            }
+            finally
+            {
+                ffProbeCTS.Dispose();
+            }
+
+            string output = StdOutBuffer.ToString().TrimEnd();
+
+            StdOutBuffer.Clear();
+
+            if (string.IsNullOrEmpty(output) || output == "N/A")
+                return TimeSpan.Zero;
+
+            return TimeSpan.Parse(output);
         }
 
         public static DownloadModel? GetDownload()
