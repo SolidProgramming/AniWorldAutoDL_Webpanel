@@ -107,6 +107,8 @@
     {
         if (firstRender)
         {
+            VisibleQueueEntriesCount = 8;
+
             CronJob.CronJobEvent += CronJobEvent;
             //CronJob.CronJobErrorEvent += CronJobErrorEvent;
             CronJob.CronJobDownloadsEvent += CronJobDownloads;
@@ -194,6 +196,8 @@
             DownloadQueComponentLogger.LogError(ErrorMessage.RemoveDBEpisodeDownloadFail);
             ToastService.AddMessage(ErrorMessage.RemoveDBEpisodeDownloadFail, 5000, ThemeColor.Danger);
         }
+
+        CronJob.SkippedDownloads.Add(download);
 
         StateHasChanged();        
 
