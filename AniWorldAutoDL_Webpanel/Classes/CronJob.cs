@@ -250,9 +250,6 @@ namespace AniWorldAutoDL_Webpanel.Classes
                         {
                             logMessage += $"{InfoMessage.EpisodeDownloadSkippedFileExists}";
                             CronJobErrorEvent?.Invoke(Severity.Information, logMessage);
-
-                            await RemoveDownload(episodeDownload);
-
                             continue;
                         }
 
