@@ -120,7 +120,7 @@
 
     private void CronJobDownloads(int downloadCount, int languageDownloadCount)
     {
-        Downloads = CronJob.DownloadQue?.ToList();
+        Downloads = CronJob.DownloadQue?.ToList().Except(CronJob.SkippedDownloads).ToList();
 
         InvokeAsync(() => StateHasChanged());
     }
