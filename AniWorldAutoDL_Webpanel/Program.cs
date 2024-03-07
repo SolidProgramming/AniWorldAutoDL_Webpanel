@@ -12,6 +12,13 @@ using PuppeteerSharp;
 
 SettingsModel? settings = SettingsHelper.ReadSettings<SettingsModel>();
 
+if (settings is null || string.IsNullOrEmpty(settings.HostUrl) || string.IsNullOrEmpty(settings.ApiUrl) || string.IsNullOrEmpty(settings.DownloadPath))
+{
+    Console.WriteLine("Settings.json Datei nicht gefunden oder nicht vollständig!\nProgramm wird beendet.");
+    Console.ReadKey();
+    return;
+}
+
 if (AnotherInstanceExists())
 {
     OpenBrowser(settings.HostUrl);

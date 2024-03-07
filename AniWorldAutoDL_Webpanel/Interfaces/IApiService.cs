@@ -3,7 +3,7 @@
     internal interface IApiService
     {
         bool Init();
-        Task<bool> Login(string username, string password);
+        //Task<bool> Login(string username, string password);
         Task<bool> RemoveFinishedDownload(EpisodeDownloadModel download);
         Task<T?> GetAsync<T>(string uri);
         Task<T?> GetAsync<T>(string uri, Dictionary<string, string> queryData, object body);

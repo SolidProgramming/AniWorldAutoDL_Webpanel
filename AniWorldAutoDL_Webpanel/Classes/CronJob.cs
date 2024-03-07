@@ -82,7 +82,7 @@ namespace AniWorldAutoDL_Webpanel.Classes
 
             SettingsModel? settings = SettingsHelper.ReadSettings<SettingsModel>();
 
-            if (settings is null || string.IsNullOrEmpty(settings.DownloadPath) || string.IsNullOrEmpty(settings.User.Username) || string.IsNullOrEmpty(settings.User.Password))
+            if (settings is null || string.IsNullOrEmpty(settings.DownloadPath) || string.IsNullOrEmpty(settings.ApiUrl) || string.IsNullOrEmpty(settings.HostUrl))
             {
                 logMessage += ErrorMessage.ReadSettings;
 
@@ -113,18 +113,9 @@ namespace AniWorldAutoDL_Webpanel.Classes
                 return;
             }
 
-            bool loginSuccess = await apiService.Login(settings.User.Username, settings.User.Password);
-
-            if (!loginSuccess)
-            {
-                logMessage += ErrorMessage.WrongCredentials;
-                CronJobErrorEvent?.Invoke(Severity.Error, logMessage);
-                return;
-            }
-
             SkippedDownloads.Clear();
 
-            IEnumerable<EpisodeDownloadModel>? downloads = await apiService.GetAsync<IEnumerable<EpisodeDownloadModel>?>("getDownloads", new() { { "username", settings.User.Username } });
+            IEnumerable<EpisodeDownloadModel>? downloads = await apiService.GetAsync<IEnumerable<EpisodeDownloadModel>?>("getDownloads");
             
             if (downloads is null || !downloads.Any())
             {

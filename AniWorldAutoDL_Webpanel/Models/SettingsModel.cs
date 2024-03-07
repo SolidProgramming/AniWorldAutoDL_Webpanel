@@ -9,11 +9,11 @@ namespace AniWorldAutoDL_Webpanel.Models
         [JsonProperty("HostUrl")]
         public string HostUrl { get; set; } = default!;
 
-        [JsonProperty("User")]
-        public UserModel User { get; set; } = default!;
+        [JsonProperty("APIKey")]
+        public string? ApiKey { get; set; }
 
         [JsonProperty("DownloadPath")]
-        public string DownloadPath { get; set; } = default!;
+        public string? DownloadPath { get; set; } = default!;
 
     }
 }

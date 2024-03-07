@@ -3,6 +3,8 @@ using Newtonsoft.Json;
 using System.Net.Http.Headers;
 using System.Net;
 using System.Text;
+using Microsoft.AspNetCore.DataProtection.KeyManagement;
+using System.Net.Http;
 
 namespace AniWorldAutoDL_Webpanel.Services
 {
@@ -10,12 +12,13 @@ namespace AniWorldAutoDL_Webpanel.Services
         : IApiService
     {
         private bool IsInitialized;
+        private string? ApiKey;
 
         public bool Init()
         {
             SettingsModel? settings = SettingsHelper.ReadSettings<SettingsModel>();
 
-            if (settings is null || string.IsNullOrEmpty(settings.ApiUrl))
+            if (settings is null)
             {
                 logger.LogError($"{DateTime.Now} | {ErrorMessage.ReadSettings}");
                 return false;
@@ -27,35 +30,22 @@ namespace AniWorldAutoDL_Webpanel.Services
                 return false;
             }
 
+            if (string.IsNullOrEmpty(settings.ApiKey))
+            {
+                logger.LogError($"{DateTime.Now} | {ErrorMessage.ReadSettingsApiKey}");
+                return false;
+            }
+
             httpClient.BaseAddress = apiUri;
+
+            ApiKey = settings.ApiKey;
 
             IsInitialized = true;
 
             logger.LogInformation($"{DateTime.Now} | {InfoMessage.ApiServiceInit}");
 
             return true;
-        }
-
-        public async Task<bool> Login(string username, string password)
-        {
-            JwtResponseModel? jwtResponse = await PostAsync<JwtResponseModel>("login", new UserModel() { Username = username, Password = password });
-
-            if (jwtResponse is null || string.IsNullOrEmpty(jwtResponse.Token))
-            {
-                UserStorageHelper.Set(default!);
-                return false;
-            }
-
-            UserModel user = new()
-            {
-                Token = jwtResponse.Token,
-                Username = username
-            };
-
-            UserStorageHelper.Set(user);
-
-            return true;
-        }
+        }        
         public async Task<bool> RemoveFinishedDownload(EpisodeDownloadModel download)
         {
             return await PostAsync<bool>("removeFinishedDownload", download);
@@ -102,10 +92,7 @@ namespace AniWorldAutoDL_Webpanel.Services
                 return default;
             }
 
-            UserModel? user = UserStorageHelper.Get();
-
-            if (user is not null && !string.IsNullOrEmpty(user.Token))
-                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", user.Token);
+            request.Headers.Add("X-API-KEY", ApiKey);
 
             using HttpResponseMessage? response = await httpClient.SendAsync(request);
 

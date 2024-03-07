@@ -4,6 +4,7 @@
     {
         internal const string ReadSettings = "Couldn't read settings!";
         internal const string ReadSettingsApiUrl = "Couldn't read/parse API Url!";
+        internal const string ReadSettingsApiKey = "Couldn't read/parse API Key!";
         internal const string WrongCredentials = "Login failed! Check credentials!";
         internal const string FFMPEGBinarieNotFound = "Couldn't find FFMPEG binaries!";
         internal const string FFProbeBinariesNotFound = "Couldn't find FFProbe binaries!";
