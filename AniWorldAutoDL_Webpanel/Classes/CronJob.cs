@@ -137,7 +137,7 @@ namespace AniWorldAutoDL_Webpanel.Classes
             DownloadQue = downloads.EnqueueRange();
             ConverterService.CTS = new CancellationTokenSource();
 
-            while (DownloadQue?.Count != 0)
+            while (DownloadQue!.Count != 0)
             {
                 if (ConverterService.CTS is not null && ConverterService.CTS.IsCancellationRequested)
                     break;
@@ -153,10 +153,10 @@ namespace AniWorldAutoDL_Webpanel.Classes
 
                 SetCronJobDownloads(DownloadQue.Count, 0);
 
-                string originalEpisodeName = episodeDownload.Download.Name;
-
                 if (string.IsNullOrEmpty(episodeDownload.Download.Name))
                     continue;
+
+                string originalEpisodeName = episodeDownload.Download.Name;                
 
                 string url = "";
 
@@ -240,19 +240,22 @@ namespace AniWorldAutoDL_Webpanel.Classes
 
                     episodeDownload.Download.Name = $"{originalEpisodeName.GetValidFileName()}[{language}]";
 
-                    CommandResult? result = await converterService.StartDownload(m3u8Url, episodeDownload.Download, settings.DownloadPath);
+                   CommandResultExt? result = await converterService.StartDownload(m3u8Url, episodeDownload.Download, settings.DownloadPath);
 
                     finishedDownloadsCount++;
 
+                    if (result is not null && result.SkippedNoResult)
+                    {
+                        logMessage += $"{InfoMessage.EpisodeDownloadSkippedFileExists}";
+                        CronJobErrorEvent?.Invoke(Severity.Information, logMessage);
+
+                        await RemoveDownload(episodeDownload);
+
+                        continue;
+                    }
+
                     if (ConverterService.CTS is not null && ( result is null || !result.IsSuccess ))
                     {
-                        if (result is null)
-                        {
-                            logMessage += $"{InfoMessage.EpisodeDownloadSkippedFileExists}";
-                            CronJobErrorEvent?.Invoke(Severity.Information, logMessage);
-                            continue;
-                        }
-
                         if (ConverterService.CTS.IsCancellationRequested)
                         {
                             logMessage += $"{WarningMessage.DownloadCanceled} {WarningMessage.DownloadNotRemoved}";
@@ -269,7 +272,7 @@ namespace AniWorldAutoDL_Webpanel.Classes
                     if (result is not null && result.IsSuccess)
                     {
                         logMessage += InfoMessage.DownloadFinished;
-                        CronJobErrorEvent?.Invoke(Severity.Information, logMessage);
+                        CronJobErrorEvent?.Invoke(Severity.Success, logMessage);
 
                         if (finishedDownloadsCount >= downloadLanguages.Count())
                             await RemoveDownload(episodeDownload);

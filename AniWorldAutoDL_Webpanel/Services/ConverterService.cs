@@ -5,7 +5,7 @@ using System.Text.RegularExpressions;
 
 namespace AniWorldAutoDL_Webpanel.Services
 {
-    public class ConverterService(ILogger<ConverterService> logger, IHostApplicationLifetime appLifetime) 
+    public class ConverterService(ILogger<ConverterService> logger, IHostApplicationLifetime appLifetime)
         : IConverterService
     {
         public delegate void ConverterStateChangedEvent(ConverterState state, DownloadModel? download = default);
@@ -57,16 +57,14 @@ namespace AniWorldAutoDL_Webpanel.Services
             logger.LogInformation($"{DateTime.Now} | {InfoMessage.ConverterChangedState} {state}");
         }
 
-        public async Task<CommandResult?> StartDownload(string streamUrl, DownloadModel download, string downloadPath)
+        public async Task<CommandResultExt?> StartDownload(string streamUrl, DownloadModel download, string downloadPath)
         {
             if (!IsInitialized)
             {
                 logger.LogError($"{DateTime.Now} | {ErrorMessage.ConverterServiceNotInitialized}");
                 return default;
             }
-
-            ConverterStateChanged?.Invoke(ConverterState.Downloading, download);
-
+                        
             string filePath = GetFileName(download, downloadPath);
 
             TimeSpan streamDuration = await GetStreamDuration(streamUrl);
@@ -76,8 +74,6 @@ namespace AniWorldAutoDL_Webpanel.Services
 
             download.StreamDuration = streamDuration;
 
-            Download = download;
-
             if (File.Exists(filePath))
             {
                 TimeSpan durationExistingFile = TimeSpan.Zero;
@@ -86,24 +82,32 @@ namespace AniWorldAutoDL_Webpanel.Services
                 if (durationExistingFile.Minutes == streamDuration.Minutes && durationExistingFile.Seconds == streamDuration.Seconds)
                 {
                     logger.LogInformation($"{DateTime.Now} | {InfoMessage.EpisodeDownloadSkippedFileExists}");
-                    return default;
-                }                   
+
+                    return new CommandResultExt(skippedNoResult: true);
+                }
             }
+
+            Download = download;
+
+            ConverterStateChanged?.Invoke(ConverterState.Downloading, download);
 
             string args = $"-y -i \"{streamUrl}\" -acodec copy -vcodec copy -sn \"{filePath}\" -f matroska";
 
             string binPath = Helper.GetFFMPEGPath();
 
             ConvertStarted?.Invoke(download);
-                        
-            CommandResult? result = default;
+
+            CommandResultExt? result = default;  
+            
             try
             {
-                result = await Cli.Wrap(binPath)
+                CommandResult tempResult = await Cli.Wrap(binPath)
                 .WithArguments(args)
                 .WithValidation(CommandResultValidation.ZeroExitCode)
                     .WithStandardErrorPipe(PipeTarget.ToDelegate(ReadOutput, Encoding.UTF8))
-                    .ExecuteAsync(CTS.Token);
+                    .ExecuteAsync(CTS!.Token);
+
+                result = new CommandResultExt(tempResult.ExitCode, tempResult.StartTime, tempResult.ExitTime);
             }
             catch (OperationCanceledException)
             {
@@ -170,7 +174,7 @@ namespace AniWorldAutoDL_Webpanel.Services
 
                 string timeText = timeMatch.Groups[1].Value;
                 progress.Time = TimeSpan.Parse(timeText);
-                double progressPercent = 100.0d * (progress.Time.TotalSeconds / Download.StreamDuration.TotalSeconds);
+                double progressPercent = 100.0d * ( progress.Time.TotalSeconds / Download.StreamDuration.TotalSeconds );
 
                 if (progressPercent <= 0.0)
                     return;
@@ -299,7 +303,7 @@ namespace AniWorldAutoDL_Webpanel.Services
 
         public static void Abort()
         {
-            if(CTS is not null && !CTS.Token.IsCancellationRequested)
+            if (CTS is not null && !CTS.Token.IsCancellationRequested)
             {
                 CTS.Cancel();
             }

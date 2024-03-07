@@ -285,9 +285,13 @@
     {
         switch (severity)
         {
+            case Severity.Success:
+                CronJobLogger.LogInformation(message);
+                ToastService.AddMessage(message, 3000, ThemeColor.Success);
+                break;
             case Severity.Information:
                 CronJobLogger.LogInformation(message);
-                ToastService.AddMessage(message, 3000, ThemeColor.Info);
+                ToastService.AddMessage(message, 2000, ThemeColor.Info);
                 break;
             case Severity.Warning:
                 CronJobLogger.LogWarning(message);

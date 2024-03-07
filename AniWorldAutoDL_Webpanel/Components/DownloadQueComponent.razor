@@ -114,7 +114,12 @@
             CronJob.CronJobDownloadsEvent += CronJobDownloads;
 
             Downloads = CronJob.DownloadQue?.ToList().Except(CronJob.SkippedDownloads).ToList();
+
+            if (Downloads is null || Downloads.Count == 0)
+                return;
+
             StateHasChanged();
+            OnDownloadSkippOrRemove.InvokeAsync(Downloads.Count);
         }
     }
 
