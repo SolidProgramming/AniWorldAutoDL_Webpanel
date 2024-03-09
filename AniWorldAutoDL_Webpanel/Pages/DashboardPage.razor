@@ -283,7 +283,7 @@
 
     private void CronJobErrorEvent(MessageType messageType, string message)
     {
-        CronJobLogger.LogInformation(message);
+        CronJobLogger.LogInformation($"{DateTime.Now} | {message}");
         ToastService.AddMessage(message, messageType);
     }
 

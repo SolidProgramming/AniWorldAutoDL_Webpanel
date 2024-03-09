@@ -14,7 +14,7 @@ namespace AniWorldAutoDL_Webpanel.Misc
         private const int DefaultAutoHideDelayError = 5000;
         private const int DefaultAutoHideDelaySecondary = 2500;
 
-        public static void AddMessage(this IHxMessengerService messenger, string message, Enums.MessageType messageType)
+        public static void AddMessage(this IHxMessengerService messenger, string message, MessageType messageType)
         {
             int autoHideDelay;
             ThemeColor color;
