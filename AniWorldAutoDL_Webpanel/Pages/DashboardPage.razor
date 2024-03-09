@@ -188,11 +188,11 @@
     {
         if (firstRender)
         {
+            CronJob.RemoveHandlers();
+
             ConverterState = ConverterService.GetConverterState();
 
             CronJob = new(CronJobLogger, ApiService, CS, AppLifetime);
-
-            CronJob.RemoveHandlers();
 
             CronJob.CronJobEvent += CronJobEvent;
             CronJob.CronJobErrorEvent += CronJobErrorEvent;
@@ -278,7 +278,7 @@
 
     private void CronJobEvent(CronJobState jobState)
     {
-        HandleCronJobState(true);
+        HandleCronJobState(jobState);
     }
 
     private void CronJobErrorEvent(MessageType messageType, string message)
@@ -293,9 +293,16 @@
         LanguageDownloadCount = CronJob.LanguageDownloadCount;
     }
 
-    private void HandleCronJobState(bool fromEvent = false)
+    private void HandleCronJobState(CronJobState cronJobState = CronJobState.Undefined)
     {
-        CronJobState = CronJob.CronJobState;
+        if (cronJobState == CronJobState.Undefined)
+        {
+            CronJobState = CronJob.CronJobState;
+        }
+        else
+        {
+            CronJobState = cronJobState;
+        }        
 
         Download = ConverterService.GetDownload();
         SetDownloadCounters();
@@ -319,20 +326,13 @@
             case CronJobState.CheckingForDownloads:
                 CheckDownloadsButtonEnabled = false;
                 CheckDownloadsButtonSpinner = true;
-                ToastService.AddMessage(InfoMessage.CheckingForDownloads, MessageType.Info);
+                ToastService.AddMessage(InfoMessage.CheckingForDownloads, MessageType.Secondary);
                 break;
             default:
                 break;
         }
 
-        if (fromEvent)
-        {
-            InvokeAsync(() => StateHasChanged());
-        }
-        else
-        {
-            StateHasChanged();
-        }
+        InvokeAsync(() => StateHasChanged());
     }
 
     private void Converter_ConverterStateChanged(ConverterState state, DownloadModel? download)

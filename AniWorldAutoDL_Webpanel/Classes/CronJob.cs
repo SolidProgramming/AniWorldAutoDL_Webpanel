@@ -20,7 +20,7 @@ namespace AniWorldAutoDL_Webpanel.Classes
 
         public delegate void CronJobDownloadsEventHandler(int downloadCount, int languageDownloadCount);
         public static event CronJobDownloadsEventHandler? CronJobDownloadsEvent;
-        public static CronJobState CronJobState { get; set; }
+        public static CronJobState CronJobState { get; set; } = CronJobState.WaitForNextCycle;
 
         public static Queue<EpisodeDownloadModel>? DownloadQue;
         public static List<EpisodeDownloadModel> SkippedDownloads = [];
@@ -116,7 +116,12 @@ namespace AniWorldAutoDL_Webpanel.Classes
             
             if (downloads is null || !downloads.Any())
             {
+                logMessage = "Es sind keine Downloads in der Warteschlange!";
+
+                SetCronJobState(CronJobState.WaitForNextCycle);
+
                 CronJobEvent?.Invoke(CronJobState.WaitForNextCycle);
+                CronJobErrorEvent?.Invoke(MessageType.Info, logMessage);
                 return;
             }
 
