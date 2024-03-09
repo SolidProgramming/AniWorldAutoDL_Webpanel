@@ -110,7 +110,6 @@
             VisibleQueueEntriesCount = 8;
 
             CronJob.CronJobEvent += CronJobEvent;
-            //CronJob.CronJobErrorEvent += CronJobErrorEvent;
             CronJob.CronJobDownloadsEvent += CronJobDownloads;
 
             Downloads = CronJob.DownloadQue?.ToList().Except(CronJob.SkippedDownloads).ToList();
@@ -152,18 +151,13 @@
         InvokeAsync(() => StateHasChanged());
     }
 
-    private void CronJobErrorEvent(Severity severity, string message)
-    {
-
-    }
-
     private void SkipDownload(EpisodeDownloadModel download)
     {
         bool? removed = Downloads?.Remove(download);
 
         if (removed is null || !removed.Value)
         {
-            ToastService.AddMessage(ErrorMessage.SkipDownloadFail, 5000, ThemeColor.Danger);
+            ToastService.AddMessage(ErrorMessage.SkipDownloadFail, MessageType.Error);
             DownloadQueComponentLogger.LogError(ErrorMessage.SkipDownloadFail);
             return;
         }
@@ -172,7 +166,7 @@
 
         StateHasChanged();
 
-        ToastService.AddMessage(InfoMessage.EpisodeDownloadSkipped, 2000, ThemeColor.Info);
+        ToastService.AddMessage(InfoMessage.EpisodeDownloadSkipped, MessageType.Info);
         DownloadQueComponentLogger.LogInformation(InfoMessage.EpisodeDownloadSkipped);
 
         OnDownloadSkippOrRemove.InvokeAsync(Downloads!.Count);
@@ -184,7 +178,7 @@
 
         if (removed is null || !removed.Value)
         {
-            ToastService.AddMessage(ErrorMessage.RemoveDownloadFail, 5000, ThemeColor.Danger);
+            ToastService.AddMessage(ErrorMessage.RemoveDownloadFail,MessageType.Error);
             DownloadQueComponentLogger.LogError(ErrorMessage.RemoveDownloadFail);
             return;
         }
@@ -194,12 +188,12 @@
         if (removeSuccess)
         {
             DownloadQueComponentLogger.LogInformation(InfoMessage.DownloadDBRemoved);
-            ToastService.AddMessage(InfoMessage.DownloadDBRemoved, 5000, ThemeColor.Info);
+            ToastService.AddMessage(InfoMessage.DownloadDBRemoved, MessageType.Info);
         }
         else
         {
             DownloadQueComponentLogger.LogError(ErrorMessage.RemoveDBEpisodeDownloadFail);
-            ToastService.AddMessage(ErrorMessage.RemoveDBEpisodeDownloadFail, 5000, ThemeColor.Danger);
+            ToastService.AddMessage(ErrorMessage.RemoveDBEpisodeDownloadFail, MessageType.Error);
         }
 
         CronJob.SkippedDownloads.Add(download);

@@ -281,29 +281,10 @@
         HandleCronJobState(true);
     }
 
-    private void CronJobErrorEvent(Severity severity, string message)
+    private void CronJobErrorEvent(MessageType messageType, string message)
     {
-        switch (severity)
-        {
-            case Severity.Success:
-                CronJobLogger.LogInformation(message);
-                ToastService.AddMessage(message, 3000, ThemeColor.Success);
-                break;
-            case Severity.Information:
-                CronJobLogger.LogInformation(message);
-                ToastService.AddMessage(message, 2000, ThemeColor.Info);
-                break;
-            case Severity.Warning:
-                CronJobLogger.LogWarning(message);
-                ToastService.AddMessage(message, 5000, ThemeColor.Warning);
-                break;
-            case Severity.Error:
-                CronJobLogger.LogError(message);
-                ToastService.AddMessage(message, 8000, ThemeColor.Danger);
-                break;
-            default:
-                break;
-        }
+        CronJobLogger.LogInformation(message);
+        ToastService.AddMessage(message, messageType);
     }
 
     private void SetDownloadCounters()
@@ -338,7 +319,7 @@
             case CronJobState.CheckingForDownloads:
                 CheckDownloadsButtonEnabled = false;
                 CheckDownloadsButtonSpinner = true;
-                ToastService.AddMessage(InfoMessage.CheckingForDownloads, 2000);
+                ToastService.AddMessage(InfoMessage.CheckingForDownloads, MessageType.Info);
                 break;
             default:
                 break;

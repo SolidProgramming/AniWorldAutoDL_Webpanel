@@ -8,11 +8,46 @@ namespace AniWorldAutoDL_Webpanel.Misc
 {
     public static class ToastMessengerHelper
     {
-        public static void AddMessage(this IHxMessengerService messenger, string message, int autoHideDelay, ThemeColor themeColor = ThemeColor.Primary)
+        private const int DefaultAutoHideDelaySuccess = 3500;
+        private const int DefaultAutoHideDelayInfo = 1500;
+        private const int DefaultAutoHideDelayWarning = 4000;
+        private const int DefaultAutoHideDelayError = 5000;
+        private const int DefaultAutoHideDelaySecondary = 2500;
+
+        public static void AddMessage(this IHxMessengerService messenger, string message, Enums.MessageType messageType)
         {
+            int autoHideDelay;
+            ThemeColor color;
+
+            switch (messageType)
+            {
+                case Enums.MessageType.Success:
+                    autoHideDelay = DefaultAutoHideDelaySuccess;
+                    color = ThemeColor.Success;
+                    break;
+                case Enums.MessageType.Info:
+                    autoHideDelay = DefaultAutoHideDelayInfo;
+                    color = ThemeColor.Info;
+                    break;
+                case Enums.MessageType.Warning:
+                    autoHideDelay = DefaultAutoHideDelayWarning;
+                    color = ThemeColor.Warning;
+                    break;
+                case Enums.MessageType.Error:
+                    autoHideDelay = DefaultAutoHideDelayError;
+                    color = ThemeColor.Danger;
+                    break;
+                case Enums.MessageType.Secondary:
+                    autoHideDelay = DefaultAutoHideDelaySecondary;
+                    color = ThemeColor.Secondary;
+                    break;
+                default:
+                    return;
+            }
+
             BootstrapMessengerMessage toast = new()
             {
-                Color = themeColor,
+                Color = color,
                 AutohideDelay = autoHideDelay,
                 ContentTemplate = BuildContentTemplate("", message),
                 CssClass = "mb-2"
