@@ -120,7 +120,6 @@ namespace AniWorldAutoDL_Webpanel.Classes
 
                 SetCronJobState(CronJobState.WaitForNextCycle);
 
-                CronJobEvent?.Invoke(CronJobState.WaitForNextCycle);
                 CronJobErrorEvent?.Invoke(MessageType.Info, logMessage);
                 return;
             }
