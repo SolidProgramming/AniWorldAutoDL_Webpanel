@@ -3,69 +3,71 @@
 @inject IApiService ApiService
 
 <div class="container mt-5">
-    <table class="table">
-        <thead>
-            <tr>
-                <th scope="col" class="text-center" style="font-family: 'Roboto', sans-serif;">#</th>
-                <th scope="col" class="text-center" style="font-family: 'Roboto', sans-serif;">Name</th>
-                <th scope="col" class="text-center" style="font-family: 'Roboto', sans-serif;">Staffel</th>
-                <th scope="col" class="text-center" style="font-family: 'Roboto', sans-serif;">Episode</th>
-                <th scope="col" class="text-center"></th>
-                <th scope="col"></th>
-                <th scope="col"></th>
-            </tr>
-        </thead>
-        <tbody>
-            @if (Downloads is not null)
-            {
-                int i = 1;
-
-                @foreach (EpisodeDownloadModel download in Downloads.Take(VisibleQueueEntriesCount))
+    <div style="overflow-y: auto;">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th scope="col" class="text-center" style="font-family: 'Roboto', sans-serif;">#</th>
+                    <th scope="col" class="text-center" style="font-family: 'Roboto', sans-serif;">Name</th>
+                    <th scope="col" class="text-center" style="font-family: 'Roboto', sans-serif;">Staffel</th>
+                    <th scope="col" class="text-center" style="font-family: 'Roboto', sans-serif;">Episode</th>
+                    <th scope="col" class="text-center"></th>
+                    <th scope="col"></th>
+                    <th scope="col"></th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Downloads is not null)
                 {
-                    @if (i == 1)
-                    {
-                        TextClass = "text-warning";
-                    }
-                    else
-                    {
-                        TextClass = "";
-                    }
-                    <tr>
-                        <td class="text-center align-middle @TextClass" width="50" style="font-family: 'Roboto', sans-serif;">
-                            @if (i == 1)
-                            {
-                                <span>Next</span>
-                            }
-                            else
-                            {
-                                <span>@i</span>
-                            }
-                        </td>
-                        <td class="text-center align-middle @TextClass" style="font-family: 'Roboto', sans-serif;">
-                            @download.Download.Name
-                        </td>
-                        <td class="text-center align-middle @TextClass" width="70" style="font-family: 'Roboto', sans-serif;">
-                            @($"S{download.Download.Season:D2}")
-                        </td>
-                        <td class="text-center align-middle @TextClass" width="70" style="font-family: 'Roboto', sans-serif;">
-                            @($"E{download.Download.Episode:D2}")
-                        </td>
-                        <td class="text-center align-middle" width="90">
-                            <LanguageFlagComponent Languages="@download.Download.LanguageFlag"></LanguageFlagComponent>
-                        </td>
-                        <td class="text-center align-middle" width="50">
-                            <HxButton OnClick="@(() => SkipDownload(download))" Color="ThemeColor.Secondary" Icon="BootstrapIcon.SkipForwardFill"></HxButton>
-                        </td>
-                        <td class="text-center align-middle" width="50">
-                            <HxButton OnClick="@(() => RemoveDownloadFromQueue(download))" Color="ThemeColor.Danger" Icon="BootstrapIcon.XLg"></HxButton>
-                        </td>
-                    </tr>
-                    i++;
-                }
+                    int i = 1;
 
-            }
-        </tbody>
-    </table>
+                    @foreach (EpisodeDownloadModel download in Downloads.Take(VisibleQueueEntriesCount))
+                    {
+                        @if (i == 1)
+                        {
+                            TextClass = "text-warning";
+                        }
+                        else
+                        {
+                            TextClass = "";
+                        }
+                        <tr>
+                            <td class="text-center align-middle @TextClass" width="50" style="font-family: 'Roboto', sans-serif;">
+                                @if (i == 1)
+                                {
+                                    <span>Next</span>
+                                }
+                                else
+                                {
+                                    <span>@i</span>
+                                }
+                            </td>
+                            <td class="text-center align-middle @TextClass" style="font-family: 'Roboto', sans-serif;">
+                                @download.Download.Name
+                            </td>
+                            <td class="text-center align-middle @TextClass" width="70" style="font-family: 'Roboto', sans-serif;">
+                                @($"S{download.Download.Season:D2}")
+                            </td>
+                            <td class="text-center align-middle @TextClass" width="70" style="font-family: 'Roboto', sans-serif;">
+                                @($"E{download.Download.Episode:D2}")
+                            </td>
+                            <td class="text-center align-middle" width="90">
+                                <LanguageFlagComponent Languages="@download.Download.LanguageFlag"></LanguageFlagComponent>
+                            </td>
+                            <td class="text-center align-middle" width="50">
+                                <HxButton OnClick="@(() => SkipDownload(download))" Color="ThemeColor.Secondary" Icon="BootstrapIcon.SkipForwardFill"></HxButton>
+                            </td>
+                            <td class="text-center align-middle" width="50">
+                                <HxButton OnClick="@(() => RemoveDownloadFromQueue(download))" Color="ThemeColor.Danger" Icon="BootstrapIcon.XLg"></HxButton>
+                            </td>
+                        </tr>
+                        i++;
+                    }
+
+                }
+            </tbody>
+        </table>
+    </div>
     <div class="row">
         @if (Downloads is not null)
         {
@@ -76,7 +78,7 @@
             <h5 class="text-center align-middle">
                 <HxBadge Type="BadgeType.RoundedPill" Color="ThemeColor.Secondary">
                     <HxIcon Icon="BootstrapIcon.FileEarmarkPlus"></HxIcon>
-                    
+
                 </HxBadge>
                 <HxSpinner CssClass="ms-1" Color="ThemeColor.Secondary" Size="SpinnerSize.Small"></HxSpinner>
             </h5>
@@ -178,7 +180,7 @@
 
         if (removed is null || !removed.Value)
         {
-            ToastService.AddMessage(ErrorMessage.RemoveDownloadFail,MessageType.Error);
+            ToastService.AddMessage(ErrorMessage.RemoveDownloadFail, MessageType.Error);
             DownloadQueComponentLogger.LogError(ErrorMessage.RemoveDownloadFail);
             return;
         }
@@ -198,7 +200,7 @@
 
         CronJob.SkippedDownloads.Add(download);
 
-        StateHasChanged();        
+        StateHasChanged();
 
         await OnDownloadSkippOrRemove.InvokeAsync(Downloads!.Count);
     }

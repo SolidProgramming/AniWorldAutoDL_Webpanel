@@ -11,108 +11,110 @@
 @inject IHostApplicationLifetime AppLifetime
 
 <div class="container">
-    <table class="table">
-        <thead>
-            <tr>
-                <th scope="col" class="text-center" style="font-family: 'Roboto', sans-serif;">Status</th>
-                <th scope="col" class="text-center" style="font-family: 'Roboto', sans-serif;">Name</th>
-                <th scope="col" class="text-center" style="font-family: 'Roboto', sans-serif;">Staffel</th>
-                <th scope="col" class="text-center" style="font-family: 'Roboto', sans-serif;">Episode</th>
-                <th scope="col" class="text-center"></th>
-                <th scope="col" class="text-center" style="font-family: 'Roboto', sans-serif;">%</th>
-                <th scope="col"></th>
-                <th scope="col"></th>
-                <th scope="col" class="text-center"></th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr>
-                <td class="text-center align-middle" width="50">
-                    @switch (ConverterState)
-                    {
-                        case ConverterState.Downloading:
-                            <HxSpinner Color="ThemeColor.Secondary" Size="SpinnerSize.Small"></HxSpinner>
-                            break;
-                        case ConverterState.Idle:
-                        case ConverterState.Undefined:
-                            @if (CronJobState == CronJobState.WaitForNextCycle)
-                            {
-                                <HxIcon Icon="BootstrapIcon.Hourglass"></HxIcon>
-                            }
-                            else
-                            {
-                                <HxSpinner Color="ThemeColor.Secondary" Size="SpinnerSize.Small"></HxSpinner>
-                            }
-                            break;
-                        default:
-                            break;
-                    }
-
-                </td>
-                <td class="text-center align-middle" width="600" style="font-family: 'Roboto', sans-serif;">
-                    @if (Download is not null)
-                    {
-                        @Download.Name
-                    }
-                    else
-                    {
-                        <HxIcon Icon="BootstrapIcon.Dash"></HxIcon>
-                    }
-                </td>
-                <td class="text-center align-middle" width="70" style="font-family: 'Roboto', sans-serif;">
-                    @if (Download is not null)
-                    {
-                        @($"S{Download.Season:D2}")
-                    }
-                    else
-                    {
-                        <HxIcon Icon="BootstrapIcon.Dash"></HxIcon>
-                    }
-                </td>
-                <td class="text-center align-middle" width="70" style="font-family: 'Roboto', sans-serif;">
-                    @if (Download is not null)
-                    {
-                        @($"E{Download.Episode:D2}")
-                    }
-                    else
-                    {
-                        <HxIcon Icon="BootstrapIcon.Dash"></HxIcon>
-                    }
-                </td>
-                <td class="text-center align-middle" width="90">
-                    @if (Download is not null)
-                    {
-                        <LanguageFlagComponent Languages="@Download.LanguageFlag"></LanguageFlagComponent>
-                    }
-                    else
-                    {
-                        <HxIcon Icon="BootstrapIcon.Dash"></HxIcon>
-                    }
-                </td>
-                <td class="text-center align-middle" width="250">
-                    <HxProgress>
-                        @if (ConvertProgress is not null)
+    <div style="overflow-y: auto;">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th scope="col" class="text-center" style="font-family: 'Roboto', sans-serif;">Status</th>
+                    <th scope="col" class="text-center" style="font-family: 'Roboto', sans-serif;">Name</th>
+                    <th scope="col" class="text-center" style="font-family: 'Roboto', sans-serif;">Staffel</th>
+                    <th scope="col" class="text-center" style="font-family: 'Roboto', sans-serif;">Episode</th>
+                    <th scope="col" class="text-center"></th>
+                    <th scope="col" class="text-center" style="font-family: 'Roboto', sans-serif;">%</th>
+                    <th scope="col"></th>
+                    <th scope="col"></th>
+                    <th scope="col" class="text-center"></th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="text-center align-middle" width="50">
+                        @switch (ConverterState)
                         {
-                            <HxProgressBar Value="ConvertProgress.ProgressPercent" Color="ThemeColor.Success" />
+                            case ConverterState.Downloading:
+                                <HxSpinner Color="ThemeColor.Secondary" Size="SpinnerSize.Small"></HxSpinner>
+                                break;
+                            case ConverterState.Idle:
+                            case ConverterState.Undefined:
+                                @if (CronJobState == CronJobState.WaitForNextCycle)
+                                {
+                                    <HxIcon Icon="BootstrapIcon.Hourglass"></HxIcon>
+                                }
+                                else
+                                {
+                                    <HxSpinner Color="ThemeColor.Secondary" Size="SpinnerSize.Small"></HxSpinner>
+                                }
+                                break;
+                            default:
+                                break;
+                        }
+
+                    </td>
+                    <td class="text-center align-middle" width="600" style="font-family: 'Roboto', sans-serif;">
+                        @if (Download is not null)
+                        {
+                            @Download.Name
                         }
                         else
                         {
-                            <HxProgressBar Value="0" Color="ThemeColor.Success" />
+                            <HxIcon Icon="BootstrapIcon.Dash"></HxIcon>
                         }
-                    </HxProgress>
-                </td>
-                <td class="text-center align-middle" width="50">
-                    <HxButton Enabled="StopConverterButtonEnabled" Color="ThemeColor.Warning" Icon="BootstrapIcon.StopFill" OnClick="StopConverter"></HxButton>
-                </td>
-                <td class="text-center align-middle" width="50">
-                    <HxButton Enabled="EditConverterSettingsButtonEnabled" Color="ThemeColor.Secondary" Icon="BootstrapIcon.PencilFill" OnClick="@MoveToConverterSettings"></HxButton>
-                </td>
-                <td class="text-center align-middle" width="50">
-                    <HxButton Spinner="CheckDownloadsButtonSpinner" Enabled="CheckDownloadsButtonEnabled" OnClick="CheckForDownloads" Color="ThemeColor.Success" Icon="BootstrapIcon.ArrowClockwise"></HxButton>
-                </td>
-            </tr>
-        </tbody>
-    </table>
+                    </td>
+                    <td class="text-center align-middle" width="70" style="font-family: 'Roboto', sans-serif;">
+                        @if (Download is not null)
+                        {
+                            @($"S{Download.Season:D2}")
+                        }
+                        else
+                        {
+                            <HxIcon Icon="BootstrapIcon.Dash"></HxIcon>
+                        }
+                    </td>
+                    <td class="text-center align-middle" width="70" style="font-family: 'Roboto', sans-serif;">
+                        @if (Download is not null)
+                        {
+                            @($"E{Download.Episode:D2}")
+                        }
+                        else
+                        {
+                            <HxIcon Icon="BootstrapIcon.Dash"></HxIcon>
+                        }
+                    </td>
+                    <td class="text-center align-middle" width="90">
+                        @if (Download is not null)
+                        {
+                            <LanguageFlagComponent Languages="@Download.LanguageFlag"></LanguageFlagComponent>
+                        }
+                        else
+                        {
+                            <HxIcon Icon="BootstrapIcon.Dash"></HxIcon>
+                        }
+                    </td>
+                    <td class="text-center align-middle" width="250">
+                        <HxProgress>
+                            @if (ConvertProgress is not null)
+                            {
+                                <HxProgressBar Value="ConvertProgress.ProgressPercent" Color="ThemeColor.Success" />
+                            }
+                            else
+                            {
+                                <HxProgressBar Value="0" Color="ThemeColor.Success" />
+                            }
+                        </HxProgress>
+                    </td>
+                    <td class="text-center align-middle" width="50">
+                        <HxButton Enabled="StopConverterButtonEnabled" Color="ThemeColor.Warning" Icon="BootstrapIcon.StopFill" OnClick="StopConverter"></HxButton>
+                    </td>
+                    <td class="text-center align-middle" width="50">
+                        <HxButton Enabled="EditConverterSettingsButtonEnabled" Color="ThemeColor.Secondary" Icon="BootstrapIcon.PencilFill" OnClick="@MoveToConverterSettings"></HxButton>
+                    </td>
+                    <td class="text-center align-middle" width="50">
+                        <HxButton Spinner="CheckDownloadsButtonSpinner" Enabled="CheckDownloadsButtonEnabled" OnClick="CheckForDownloads" Color="ThemeColor.Success" Icon="BootstrapIcon.ArrowClockwise"></HxButton>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
     <div class="container">
         <div class="row">
             <div class="col d-flex justify-content-start">
