@@ -13,5 +13,6 @@
         internal const string CronJobRunning = "Cron Job is currently running. Skipping...";
         internal const string EpisodeDownloadSkipped = "Download übersprungen. Episode wird beim nächsten Durchgang heruntergeladen.";
         internal const string EpisodeDownloadSkippedFileExists = "Download übersprungen. Datei existiert bereits.";
+        internal const string NoDownloadsInQueue = "Es sind keine Downloads in der Warteschlange!";
     }
 }

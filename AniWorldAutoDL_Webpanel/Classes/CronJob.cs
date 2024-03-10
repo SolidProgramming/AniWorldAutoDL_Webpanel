@@ -69,6 +69,8 @@ namespace AniWorldAutoDL_Webpanel.Classes
 
         public async Task CheckForNewDownloads()
         {
+            logger.LogInformation($"{DateTime.Now} | {CronJobState}");
+
             if (CronJobState != CronJobState.WaitForNextCycle)
             {
                 logger.LogInformation($"{DateTime.Now} | {InfoMessage.CronJobRunning}");
@@ -100,27 +102,31 @@ namespace AniWorldAutoDL_Webpanel.Classes
             {
                 logMessage = $"{sto.Host} {ErrorMessage.HosterUnavailable}";
                 CronJobErrorEvent?.Invoke(MessageType.Error, logMessage);
-                return;
             }
 
             if (!hosterReachableAniworld)
             {
                 logMessage = $"{aniworld.Host} {ErrorMessage.HosterUnavailable}";
                 CronJobErrorEvent?.Invoke(MessageType.Error, logMessage);
+            }
+
+            if (!hosterReachableSTO || !hosterReachableAniworld)
+            {
+                SetCronJobDownloads(0, 0);
+                SetCronJobState(CronJobState.WaitForNextCycle);
                 return;
             }
 
             SkippedDownloads.Clear();
 
             IEnumerable<EpisodeDownloadModel>? downloads = await apiService.GetAsync<IEnumerable<EpisodeDownloadModel>?>("getDownloads");
-            
+
             if (downloads is null || !downloads.Any())
             {
-                logMessage = "Es sind keine Downloads in der Warteschlange!";
-
+                SetCronJobDownloads(0, 0);
                 SetCronJobState(CronJobState.WaitForNextCycle);
 
-                CronJobErrorEvent?.Invoke(MessageType.Info, logMessage);
+                CronJobErrorEvent?.Invoke(MessageType.Info, InfoMessage.NoDownloadsInQueue);
                 return;
             }
 
@@ -133,7 +139,7 @@ namespace AniWorldAutoDL_Webpanel.Classes
             {
                 if (ConverterService.CTS is not null && ConverterService.CTS.IsCancellationRequested)
                     break;
-                               
+
                 EpisodeDownloadModel episodeDownload = DownloadQue.Dequeue();
 
                 if (SkippedDownloads.Contains(episodeDownload))
@@ -146,7 +152,7 @@ namespace AniWorldAutoDL_Webpanel.Classes
                 if (string.IsNullOrEmpty(episodeDownload.Download.Name))
                     continue;
 
-                string originalEpisodeName = episodeDownload.Download.Name;                
+                string originalEpisodeName = episodeDownload.Download.Name;
 
                 string url = "";
 
@@ -224,7 +230,7 @@ namespace AniWorldAutoDL_Webpanel.Classes
 
                     episodeDownload.Download.Name = $"{originalEpisodeName.GetValidFileName()}[{language}]";
 
-                   CommandResultExt? result = await converterService.StartDownload(m3u8Url, episodeDownload.Download, settings.DownloadPath);
+                    CommandResultExt? result = await converterService.StartDownload(m3u8Url, episodeDownload.Download, settings.DownloadPath);
 
                     finishedDownloadsCount++;
 
@@ -341,7 +347,7 @@ namespace AniWorldAutoDL_Webpanel.Classes
             }
             catch (Exception ex)
             {
-                await Console.Out.WriteLineAsync(   ex.ToString());
+                await Console.Out.WriteLineAsync(ex.ToString());
                 return null;
             }
             finally

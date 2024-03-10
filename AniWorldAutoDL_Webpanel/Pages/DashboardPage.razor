@@ -280,7 +280,7 @@
 
     private void CronJobEvent(CronJobState jobState)
     {
-        HandleCronJobState(jobState);
+        HandleCronJobState(jobState, true);
     }
 
     private void CronJobErrorEvent(MessageType messageType, string message)
@@ -295,7 +295,7 @@
         LanguageDownloadCount = CronJob.LanguageDownloadCount;
     }
 
-    private void HandleCronJobState(CronJobState cronJobState = CronJobState.Undefined)
+    private void HandleCronJobState(CronJobState cronJobState = CronJobState.Undefined, bool fromEvent = false)
     {
         if (cronJobState == CronJobState.Undefined)
         {
@@ -334,7 +334,14 @@
                 break;
         }
 
-        InvokeAsync(() => StateHasChanged());
+        if (fromEvent)
+        {
+            InvokeAsync(() => StateHasChanged());
+        }
+        else
+        {
+            StateHasChanged();
+        }
     }
 
     private void Converter_ConverterStateChanged(ConverterState state, DownloadModel? download)
