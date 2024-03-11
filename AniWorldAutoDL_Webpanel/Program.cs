@@ -140,14 +140,13 @@ static bool AnotherInstanceExists()
     return false;
 }
 
-
 static string? GetHostAdress()
 {
     IPAddress[] addresslist = Dns.GetHostAddresses(Dns.GetHostName());
 
-    string ipAdress = addresslist.FirstOrDefault(o => o.AddressFamily == AddressFamily.InterNetwork)?.MapToIPv4().ToString();
+    string ipAdress = addresslist.FirstOrDefault(_ => _.AddressFamily == AddressFamily.InterNetwork && _.MapToIPv4().ToString().StartsWith("192.168"))?.MapToIPv4().ToString();
 
     string hostAdress = $"http://{ipAdress}:5080";
 
-     return hostAdress;
+    return hostAdress;
 }
