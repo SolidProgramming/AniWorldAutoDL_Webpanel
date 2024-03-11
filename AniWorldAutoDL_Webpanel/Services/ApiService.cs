@@ -1,10 +1,7 @@
 ﻿using Microsoft.AspNetCore.WebUtilities;
 using Newtonsoft.Json;
-using System.Net.Http.Headers;
 using System.Net;
 using System.Text;
-using Microsoft.AspNetCore.DataProtection.KeyManagement;
-using System.Net.Http;
 
 namespace AniWorldAutoDL_Webpanel.Services
 {

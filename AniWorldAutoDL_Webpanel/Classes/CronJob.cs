@@ -1,10 +1,8 @@
-﻿using CliWrap;
-using HtmlAgilityPack;
+﻿using HtmlAgilityPack;
 using PuppeteerSharp;
 using Quartz;
 using System.Text.RegularExpressions;
 using System.Web;
-using Telegram.Bot.Types;
 
 
 namespace AniWorldAutoDL_Webpanel.Classes
@@ -81,7 +79,7 @@ namespace AniWorldAutoDL_Webpanel.Classes
 
             SettingsModel? settings = SettingsHelper.ReadSettings<SettingsModel>();
 
-            if (settings is null || string.IsNullOrEmpty(settings.DownloadPath) || string.IsNullOrEmpty(settings.ApiUrl) || string.IsNullOrEmpty(settings.HostUrl))
+            if (settings is null || string.IsNullOrEmpty(settings.DownloadPath) || string.IsNullOrEmpty(settings.ApiUrl))
             {
                 logger.LogError($"{DateTime.Now} | {ErrorMessage.ReadSettings}");
                 CronJobErrorEvent?.Invoke(MessageType.Error, ErrorMessage.ReadSettings);

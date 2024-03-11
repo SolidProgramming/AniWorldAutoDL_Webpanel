@@ -9,19 +9,23 @@ using Havit.Blazor.Components.Web;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using PuppeteerSharp;
+using System.Net;
+using System.Net.Sockets;
 
 SettingsModel? settings = SettingsHelper.ReadSettings<SettingsModel>();
 
-if (settings is null || string.IsNullOrEmpty(settings.HostUrl) || string.IsNullOrEmpty(settings.ApiUrl) || string.IsNullOrEmpty(settings.DownloadPath))
+if (settings is null || string.IsNullOrEmpty(settings.ApiUrl) || string.IsNullOrEmpty(settings.DownloadPath))
 {
     Console.WriteLine("Settings.json Datei nicht gefunden oder nicht vollständig!\nProgramm wird beendet.");
     Console.ReadKey();
     return;
 }
 
+string? hostUrl = GetHostAdress();
+
 if (AnotherInstanceExists())
 {
-    OpenBrowser(settings.HostUrl);
+    OpenBrowser(hostUrl);
     return;
 }
 
@@ -50,7 +54,7 @@ await browserFetcher.DownloadAsync();
 
 WebApplicationBuilder? builder = WebApplication.CreateBuilder(args);
 
-builder.WebHost.UseUrls(settings.HostUrl, "http://localhost:5080");
+builder.WebHost.UseUrls(hostUrl, "http://localhost:5080");
 
 builder.Services.AddHsts(_ =>
 {
@@ -96,7 +100,7 @@ converterService.Init();
 IApiService apiService = app.Services.GetRequiredService<IApiService>();
 apiService.Init();
 
-OpenBrowser(settings.HostUrl);
+OpenBrowser(hostUrl);
 
 app.Run();
 
@@ -134,4 +138,16 @@ static bool AnotherInstanceExists()
             return true;
     }
     return false;
+}
+
+
+static string? GetHostAdress()
+{
+    IPAddress[] addresslist = Dns.GetHostAddresses(Dns.GetHostName());
+
+    string ipAdress = addresslist.FirstOrDefault(o => o.AddressFamily == AddressFamily.InterNetwork)?.MapToIPv4().ToString();
+
+    string hostAdress = $"http://{ipAdress}:5080";
+
+     return hostAdress;
 }
