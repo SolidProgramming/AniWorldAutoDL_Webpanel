@@ -26,7 +26,7 @@
                     {
                         <h6 class="text-warning me-2 align-middle d-inline">Es ist ein neues Update verfügbar!</h6>
                         <HxButton Icon="BootstrapIcon.FileEarmarkZip" Size="ButtonSize.Small" CssClass="me-2 align-middle d-inline" Color="ThemeColor.Success" OnClick="DownloadUpdate">Update</HxButton>
-                        <a target="_blank" href="@ChangelogUrl">
+                        <a target="_blank" href="@UpdateDetails.Changelog">
                             <HxButton Icon="BootstrapIcon.FileTextFill" Size="ButtonSize.Small" CssClass="align-middle d-inline" Color="ThemeColor.Secondary">Patchnotes</HxButton>
                         </a>
                     }
@@ -42,8 +42,6 @@
 }
 
 @code {
-    private const string ChangelogUrl = "https://bookstack.lucaweidmann.de/books/aniworldautodl-changelogs";
-
     private bool CheckingForUpdates { get; set; }
     private bool UpdateAvailable { get; set; }
     private bool UpdateInProgress { get; set; }
@@ -52,9 +50,12 @@
 
     private float UpdateProgress = 0f;
 
-    protected override async Task OnInitializedAsync()
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        await CheckForUpdates();
+        if (firstRender)
+        {
+            await CheckForUpdates();
+        }
     }
 
     private async Task CheckForUpdates()
