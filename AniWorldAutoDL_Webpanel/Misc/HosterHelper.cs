@@ -37,24 +37,6 @@ namespace AniWorldAutoDL_Webpanel.Misc
             }
         }
 
-        internal static async Task<string?> GetEpisodeM3U8(string streamUrl)
-        {
-            try
-            {
-                using HttpClient httpClient = new();
-                string html = await httpClient.GetStringAsync(streamUrl);
-
-                HtmlDocument htmlDocument = new();
-                htmlDocument.LoadHtml(html);
-
-                return new Regex("'hls': '(.*?)',").Match(html).Groups[1].Value;
-            }
-            catch (Exception)
-            {
-                return null;
-            }
-        }
-
         //ToDo: Hoster Name dynamisch in den query einbinden
         internal static Dictionary<Language, List<string>> GetLanguageRedirectLinks(string html)
         {
