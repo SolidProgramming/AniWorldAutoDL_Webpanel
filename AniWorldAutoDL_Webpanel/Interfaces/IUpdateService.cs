@@ -2,7 +2,10 @@
 {
     public interface IUpdateService
     {
-        Task<(bool, UpdateDetailsModel?)> CheckForUpdates(string AssemblyVersion);
+        event EventHandler OnUpdateCheckStarted;
+        event EventHandler<(bool, UpdateDetailsModel?)> OnUpdateCheckFinished;
+
+        Task CheckForUpdates();
         void DownloadUpdate(UpdateDetailsModel updateDetails);
     }
 }

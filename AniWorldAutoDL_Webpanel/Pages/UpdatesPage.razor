@@ -1,0 +1,13 @@
+﻿@attribute [Route(Routes.Updates)]
+@inject IUpdateService UpdateService
+
+<PageTitle>Updates</PageTitle>
+
+<UpdateComponent></UpdateComponent>
+
+@code {
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await UpdateService.CheckForUpdates();
+    }
+}

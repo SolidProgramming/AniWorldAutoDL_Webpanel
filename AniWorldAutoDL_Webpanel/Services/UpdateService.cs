@@ -3,11 +3,26 @@
 namespace AniWorldAutoDL_Webpanel.Services
 {
     public class UpdateService : IUpdateService
-    {
-        private const string UpdatesDetailsUrl = "https://autoupdate.solidserver.xyz/autoupdater_aniworldautodl/latest.xml";
+    {        
+        public event EventHandler? OnUpdateCheckStarted;
+        public event EventHandler<(bool, UpdateDetailsModel?)>? OnUpdateCheckFinished;
 
-        public async Task<(bool, UpdateDetailsModel?)> CheckForUpdates(string AssemblyVersion)
+        private UpdateDetailsModel? UpdateDetails;
+        private bool UpdateAvailable;
+
+        private const string UpdatesDetailsUrl = "https://autoupdate.solidserver.xyz/autoupdater_aniworldautodl/latest.xml";
+             
+        public async Task CheckForUpdates()
         {
+            if (UpdateAvailable && UpdateDetails is not null)
+                OnUpdateCheckFinished?.Invoke(this, (true, UpdateDetails));
+
+            OnUpdateCheckStarted?.Invoke(this, EventArgs.Empty);
+
+            await Task.Delay(2000);
+
+            string assemblyVersion = typeof(Program).Assembly.GetName().Version.ToString();
+
             using HttpClient client = new();
 
             using CancellationTokenSource cts = new();
@@ -17,25 +32,33 @@ namespace AniWorldAutoDL_Webpanel.Services
             {
                 string result = await client.GetStringAsync(UpdatesDetailsUrl, cts.Token);
 
+                UpdateDetailsModel? updateDetails;
+
                 if (result.Length > 0)
                 {
-                    UpdateDetailsModel? updateDetails = ParseUpdateModel(result);
+                    updateDetails = ParseUpdateModel(result);
 
                     if (updateDetails is null)
-                        return (false, default);
-
-                    if (new Version(updateDetails.Version) > new Version(AssemblyVersion))
                     {
-                        return (true, updateDetails);
+                        OnUpdateCheckFinished?.Invoke(this, (false, default));
+                        return;
                     }
+
+                    if (new Version(updateDetails.Version) > new Version(assemblyVersion))
+                    {
+                        UpdateAvailable = true;
+                        UpdateDetails = updateDetails;
+                        OnUpdateCheckFinished?.Invoke(this, (UpdateAvailable, UpdateDetails));
+                        return;
+                    }      
                 }
+
+                OnUpdateCheckFinished?.Invoke(this, (false, default));
             }
             catch (Exception)
             {
-                return default;
+                return;
             }
-
-            return default;
         }
 
         public void DownloadUpdate(UpdateDetailsModel updateDetails)

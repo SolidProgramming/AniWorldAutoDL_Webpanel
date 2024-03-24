@@ -9,7 +9,11 @@
 @inject IConverterService CS
 @inject NavigationManager NavigationManager
 @inject IHostApplicationLifetime AppLifetime
+@inject IUpdateService UpdateService
 
+<PageTitle>Dashboard</PageTitle>
+
+<UpdateComponent></UpdateComponent>
 <div class="container">
     <div style="overflow-y: auto;">
         <table class="table">
@@ -192,8 +196,15 @@
     private int DownloadQueCount;
     private int LanguageDownloadCount;
 
-    protected override void OnAfterRender(bool firstRender)
+    protected override async void OnAfterRender(bool firstRender)
     {
+        if (firstRender && base.ToString().IsFirstRender())
+        {
+            await UpdateService.CheckForUpdates();
+        }
+
+        RenderHelper.ComponentSetRendered(base.ToString()!);
+
         if (firstRender)
         {
             CronJob.RemoveHandlers();
