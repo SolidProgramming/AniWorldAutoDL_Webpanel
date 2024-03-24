@@ -103,7 +103,7 @@
                         </HxProgress>
                     </td>
                     <td class="text-center align-middle" width="50">
-                        <HxButton Enabled="StopConverterButtonEnabled" Color="ThemeColor.Warning" Icon="BootstrapIcon.StopFill" OnClick="StopConverter"></HxButton>
+                        <HxButton Enabled="@(ConverterState == ConverterState.Downloading && StopConverterButtonEnabled)" Color="ThemeColor.Warning" Icon="BootstrapIcon.StopFill" OnClick="StopConverter"></HxButton>
                     </td>
                     <td class="text-center align-middle" width="50">
                         <HxButton OnClick="SkipDownload" Color="ThemeColor.Secondary" Enabled="@(ConverterState == ConverterState.Downloading)" Icon="BootstrapIcon.SkipForwardFill"></HxButton>
@@ -132,6 +132,11 @@
                         </HxBadge>
                     </h5>
                 </div>
+            </div>
+            <div class="col">
+                <label class="text-warning me-2">Stoppe nach X Downloads</label>
+                <HxInputNumber CssClass="d-inline-flex " InputSize="InputSize.Small" Decimals="0" TValue="int" @bind-Value="StopAfterDownloadCount" />
+                <HxButton Size="ButtonSize.Small" CssClass="w-100 mt-2" Color="ThemeColor.Success">Speichern</HxButton>
             </div>
             <div class="col d-flex justify-content-end">
                 @if (NextCronJobCycle is not null)
@@ -167,6 +172,7 @@
     private DownloadModel? Download;
     private ConverterState ConverterState = ConverterState.Idle;
     private CronJobState CronJobState = CronJobState.WaitForNextCycle;
+    private int StopAfterDownloadCount { get; set; } = 0;
 
     private CronJob? CronJob;
 
