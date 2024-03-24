@@ -19,7 +19,8 @@ namespace AniWorldAutoDL_Webpanel.Services
         private static DownloadModel? Download { get; set; }
         private static ConverterState ConverterState { get; set; } = ConverterState.Undefined;
 
-        private bool IsInitialized;
+        private bool IsInitialized { get; set; }
+        public static bool AbortIsSkip { get; set; }
 
         public static CancellationTokenSource? CTS { get; set; }
 
@@ -64,7 +65,7 @@ namespace AniWorldAutoDL_Webpanel.Services
                 logger.LogError($"{DateTime.Now} | {ErrorMessage.ConverterServiceNotInitialized}");
                 return default;
             }
-                        
+
             string filePath = GetFileName(download, downloadPath);
 
             TimeSpan streamDuration = await GetStreamDuration(streamUrl);
@@ -97,21 +98,30 @@ namespace AniWorldAutoDL_Webpanel.Services
 
             ConvertStarted?.Invoke(download);
 
-            CommandResultExt? result = default;  
-            
+            CTS = new CancellationTokenSource();
+
+            CommandResultExt? result = default;
+
             try
             {
                 CommandResult tempResult = await Cli.Wrap(binPath)
                 .WithArguments(args)
                 .WithValidation(CommandResultValidation.ZeroExitCode)
                     .WithStandardErrorPipe(PipeTarget.ToDelegate(ReadOutput, Encoding.UTF8))
-                    .ExecuteAsync(CTS!.Token);
+                    .ExecuteAsync(CTS.Token);
 
                 result = new CommandResultExt(tempResult.ExitCode, tempResult.StartTime, tempResult.ExitTime);
             }
             catch (OperationCanceledException)
             {
-                logger.LogWarning($"{DateTime.Now} | {WarningMessage.DownloadCanceled}");
+                if (AbortIsSkip)
+                {
+                    return new CommandResultExt(skipped: true);
+                }
+                else
+                {
+                    logger.LogWarning($"{DateTime.Now} | {WarningMessage.DownloadCanceled}");
+                }
             }
             catch (Exception ex)
             {
@@ -301,8 +311,10 @@ namespace AniWorldAutoDL_Webpanel.Services
             return ConverterState;
         }
 
-        public static void Abort()
+        public static void Abort(bool isSkip = false)
         {
+            AbortIsSkip = isSkip;
+
             if (CTS is not null && !CTS.Token.IsCancellationRequested)
             {
                 CTS.Cancel();

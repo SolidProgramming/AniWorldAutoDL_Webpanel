@@ -1,6 +1,4 @@
-﻿
-using System.Xml.Serialization;
-using static AniWorldAutoDL_Webpanel.Models.UpdateDetailsModel;
+﻿using System.Xml.Serialization;
 
 namespace AniWorldAutoDL_Webpanel.Services
 {

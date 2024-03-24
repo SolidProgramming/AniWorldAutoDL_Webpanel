@@ -106,7 +106,7 @@
                         <HxButton Enabled="StopConverterButtonEnabled" Color="ThemeColor.Warning" Icon="BootstrapIcon.StopFill" OnClick="StopConverter"></HxButton>
                     </td>
                     <td class="text-center align-middle" width="50">
-                        <HxButton Enabled="EditConverterSettingsButtonEnabled" Color="ThemeColor.Secondary" Icon="BootstrapIcon.PencilFill" OnClick="@MoveToConverterSettings"></HxButton>
+                        <HxButton OnClick="SkipDownload" Color="ThemeColor.Secondary" Enabled="@(ConverterState == ConverterState.Downloading)" Icon="BootstrapIcon.SkipForwardFill"></HxButton>
                     </td>
                     <td class="text-center align-middle" width="50">
                         <HxButton Spinner="CheckDownloadsButtonSpinner" Enabled="CheckDownloadsButtonEnabled" OnClick="CheckForDownloads" Color="ThemeColor.Success" Icon="BootstrapIcon.ArrowClockwise"></HxButton>
@@ -304,7 +304,7 @@
         else
         {
             CronJobState = cronJobState;
-        }        
+        }
 
         Download = ConverterService.GetDownload();
         SetDownloadCounters();
@@ -380,9 +380,20 @@
         await CronJob.CheckForNewDownloads();
     }
 
-    private void StopConverter()
+    private async Task StopConverter()
     {
+        if (CronJob is not null)
+            await CronJob.Abort();
+
         ConverterService.Abort();
+    }
+
+    private void SkipDownload()
+    {
+        if (CronJobState != CronJobState.Running || ConverterState != ConverterState.Downloading)
+            return;
+
+        ConverterService.Abort(true);
     }
 
     private void OnDownloadSkipped(int newDownloadCount)

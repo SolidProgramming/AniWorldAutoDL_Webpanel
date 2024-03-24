@@ -135,7 +135,7 @@ namespace AniWorldAutoDL_Webpanel.Classes
 
             while (DownloadQue!.Count != 0)
             {
-                if (ConverterService.CTS is not null && ConverterService.CTS.IsCancellationRequested)
+                if (ConverterService.CTS is not null && ConverterService.CTS.IsCancellationRequested && !ConverterService.AbortIsSkip)
                     break;
 
                 EpisodeDownloadModel episodeDownload = DownloadQue.Dequeue();
@@ -231,6 +231,13 @@ namespace AniWorldAutoDL_Webpanel.Classes
                     CommandResultExt? result = await converterService.StartDownload(m3u8Url, episodeDownload.Download, settings.DownloadPath);
 
                     finishedDownloadsCount++;
+
+                    if (result is not null && result.Skipped)
+                    {
+                        CronJobErrorEvent?.Invoke(MessageType.Info, InfoMessage.EpisodeDownloadSkipped);
+
+                        continue;
+                    }
 
                     if (result is not null && result.SkippedNoResult)
                     {
