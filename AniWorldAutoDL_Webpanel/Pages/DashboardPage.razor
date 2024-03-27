@@ -198,13 +198,6 @@
 
     protected override async void OnAfterRender(bool firstRender)
     {
-        if (firstRender && base.ToString().IsFirstRender())
-        {
-            await UpdateService.CheckForUpdates();
-        }
-
-        RenderHelper.ComponentSetRendered(base.ToString()!);
-
         if (firstRender)
         {
             CronJob.RemoveHandlers();
@@ -239,7 +232,12 @@
             HandleCronJobState();
         }
 
-        base.OnAfterRender(firstRender);
+        if (firstRender && base.ToString().IsFirstRender())
+        {
+            await UpdateService.CheckForUpdates();
+        }
+
+        RenderHelper.ComponentSetRendered(base.ToString()!);
     }
 
     private void RefreshCycleTime(Object? source, System.Timers.ElapsedEventArgs e)
