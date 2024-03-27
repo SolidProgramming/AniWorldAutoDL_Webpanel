@@ -1,5 +1,6 @@
 ﻿using CliWrap;
 using System;
+using System.Collections.Generic;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -97,6 +98,8 @@ namespace AniWorldAutoDL_Webpanel.Services
             string binPath = Helper.GetFFMPEGPath();
 
             ConvertStarted?.Invoke(download);
+
+            Download.DownloadStartTime = DateTime.Now;
 
             CTS = new CancellationTokenSource();
 
@@ -216,9 +219,23 @@ namespace AniWorldAutoDL_Webpanel.Services
                 string fpsText = fpsMatch.Groups[1].Value;
                 progress.FPS = float.Parse(fpsText);
 
+                progress.ETA = EstimateCompletionTime(progress.ProgressPercent, Download.DownloadStartTime);
+
                 ConvertProgressChanged?.Invoke(progress);
             }
             catch (Exception) { }
+        }
+
+        private static TimeSpan EstimateCompletionTime(double completedPercentage, DateTime downloadStartTime)
+        {
+            TimeSpan elapsedTime = DateTime.Now.Subtract(downloadStartTime);            
+
+            double remainingPercentage = 100 - completedPercentage;
+            double estimatedTotalTime = elapsedTime.TotalSeconds / completedPercentage * 100;
+            double remainingTime = estimatedTotalTime * remainingPercentage / 100;
+            TimeSpan remainingTimeSpan = TimeSpan.FromSeconds(remainingTime);
+
+            return remainingTimeSpan;
         }
 
         private static async Task<TimeSpan> GetStreamDuration(string streamUrl)

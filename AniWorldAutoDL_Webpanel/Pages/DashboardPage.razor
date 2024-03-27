@@ -25,6 +25,7 @@
                     <th scope="col" class="text-center" style="font-family: 'Roboto', sans-serif;">Episode</th>
                     <th scope="col" class="text-center"></th>
                     <th scope="col" class="text-center" style="font-family: 'Roboto', sans-serif;">%</th>
+                    <th scope="col" class="text-center" style="font-family: 'Roboto', sans-serif;">ETA</th>
                     <th scope="col"></th>
                     <th scope="col"></th>
                     <th scope="col" class="text-center"></th>
@@ -105,6 +106,16 @@
                                 <HxProgressBar Value="0" Color="ThemeColor.Success" />
                             }
                         </HxProgress>
+                    </td>
+                    <td class="text-center align-middle" width="100" style="font-family: 'Roboto', sans-serif;">
+                        @if (ConvertProgress is not null && SmoothedETA.TotalSeconds > 0)
+                        {
+                            @($"{SmoothedETA.Hours:00}:{SmoothedETA.Minutes:00}:{SmoothedETA.Seconds:00}")
+                        }
+                        else
+                        {
+                            <HxIcon Icon="BootstrapIcon.Dash"></HxIcon>
+                        }
                     </td>
                     <td class="text-center align-middle" width="50">
                         <HxButton Enabled="@(ConverterState == ConverterState.Downloading && StopConverterButtonEnabled)" Color="ThemeColor.Warning" Icon="BootstrapIcon.StopFill" OnClick="StopConverter"></HxButton>
@@ -196,6 +207,8 @@
     private int DownloadQueCount;
     private int LanguageDownloadCount;
 
+    private TimeSpan SmoothedETA { get; set; }
+
     protected override async void OnAfterRender(bool firstRender)
     {
         if (firstRender)
@@ -282,7 +295,18 @@
     private void Converter_ConvertProgressChanged(ConvertProgressModel convertProgress)
     {
         ConvertProgress = convertProgress;
-        InvokeAsync(() => StateHasChanged());
+
+        if (SmoothedETA.TotalSeconds == 0)
+        {
+            SmoothedETA = ConvertProgress.ETA;
+        }
+
+        if (ConvertProgress.ETA.TotalSeconds < SmoothedETA.TotalSeconds)
+        {
+            SmoothedETA = ConvertProgress.ETA;
+        }
+
+        InvokeAsync(() => StateHasChanged());        
     }
 
     private void CronJobDownloads(int downloadCount, int languageDownloadCount)

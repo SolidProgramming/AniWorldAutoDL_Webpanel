@@ -8,5 +8,6 @@
         public float Speed { get; set; }
         public float FPS { get; set; }
         public int ProgressPercent { get; set; }
+        public TimeSpan ETA { get; set; }
     }
 }

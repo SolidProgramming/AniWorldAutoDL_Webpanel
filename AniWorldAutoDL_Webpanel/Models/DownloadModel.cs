@@ -11,5 +11,6 @@ namespace AniWorldAutoDL_Webpanel.Models
         public string? Path { get; set; }
         public Language LanguageFlag { get; set; }
         public TimeSpan StreamDuration { get; set; }
+        public DateTime DownloadStartTime { get; set; }
     }
 }
