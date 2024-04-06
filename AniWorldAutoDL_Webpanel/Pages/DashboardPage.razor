@@ -25,7 +25,10 @@
                     <th scope="col" class="text-center" style="font-family: 'Roboto', sans-serif;">Episode</th>
                     <th scope="col" class="text-center"></th>
                     <th scope="col" class="text-center" style="font-family: 'Roboto', sans-serif;">%</th>
-                    <th scope="col" class="text-center" style="font-family: 'Roboto', sans-serif;">ETA</th>
+                    <th scope="col" class="text-center text-warning" style="font-family: 'Roboto', sans-serif;">
+                        <HxIcon Icon="BootstrapIcon.LightningChargeFill" />
+                    </th>
+                    <th scope="col" class="text-center text-info" style="font-family: 'Roboto', sans-serif;">ETA</th>
                     <th scope="col"></th>
                     <th scope="col"></th>
                     <th scope="col" class="text-center"></th>
@@ -55,7 +58,7 @@
                         }
 
                     </td>
-                    <td class="text-center align-middle" width="600" style="font-family: 'Roboto', sans-serif;">
+                    <td class="text-center align-middle" width="500" style="font-family: 'Roboto', sans-serif;">
                         @if (Download is not null)
                         {
                             @Download.Name
@@ -95,7 +98,7 @@
                             <HxIcon Icon="BootstrapIcon.Dash"></HxIcon>
                         }
                     </td>
-                    <td class="text-center align-middle" width="250">
+                    <td class="text-center align-middle" width="220">
                         <HxProgress>
                             @if (ConvertProgress is not null)
                             {
@@ -106,6 +109,16 @@
                                 <HxProgressBar Value="0" Color="ThemeColor.Success" />
                             }
                         </HxProgress>
+                    </td>
+                    <td class="text-center align-middle" width="70">
+                        @if (ConvertProgress is not null)
+                        {
+                            @(GetAdjustedDownloadSpeed(ConvertProgress))
+                        }
+                        else
+                        {
+                            <HxIcon Icon="BootstrapIcon.Dash"></HxIcon>
+                        }
                     </td>
                     <td class="text-center align-middle" width="100" style="font-family: 'Roboto', sans-serif;">
                         @if (ConvertProgress is not null && SmoothedETA.TotalSeconds > 0)
@@ -148,11 +161,11 @@
                     </h5>
                 </div>
             </div>
-            <div class="col">
+            @* <div class="col">
                 <label class="text-warning me-2">Stoppe nach X Downloads</label>
                 <HxInputNumber CssClass="d-inline-flex " InputSize="InputSize.Small" Decimals="0" TValue="int" @bind-Value="StopAfterDownloadCount" />
                 <HxButton Size="ButtonSize.Small" CssClass="w-100 mt-2" Color="ThemeColor.Success">Speichern</HxButton>
-            </div>
+            </div> *@
             <div class="col d-flex justify-content-end">
                 @if (NextCronJobCycle is not null)
                 {
@@ -438,5 +451,26 @@
     private void OnDownloadSkipped(int newDownloadCount)
     {
         DownloadQueCount = newDownloadCount;
+    }
+
+    private string? GetAdjustedDownloadSpeed(ConvertProgressModel convertProgress)
+    {
+        if (convertProgress is null || convertProgress.KBytePerSecond <= 0)
+            return default;
+
+        string unit = "KB/s";
+        double speed = convertProgress.KBytePerSecond;
+
+        string speedFormatted = $"{speed:N0}";
+
+        if (convertProgress.KBytePerSecond > 1024)
+        {
+            speed /= 1024;
+            unit = "MB/s";
+
+            speedFormatted = $"{speed:N2}";
+        }
+
+        return $"{speedFormatted} {unit}";
     }
 }

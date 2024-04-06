@@ -1,6 +1,4 @@
 ﻿using CliWrap;
-using System;
-using System.Collections.Generic;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -24,6 +22,9 @@ namespace AniWorldAutoDL_Webpanel.Services
         public static bool AbortIsSkip { get; set; }
 
         public static CancellationTokenSource? CTS { get; set; }
+
+        private static long PreviousDownloadSize = 0;
+        private static DateTime? FFMPEGStartTime;
 
         public bool Init()
         {
@@ -133,6 +134,8 @@ namespace AniWorldAutoDL_Webpanel.Services
             finally
             {
                 Download = default;
+                FFMPEGStartTime = default;
+                PreviousDownloadSize = 0;
                 ConverterStateChanged?.Invoke(ConverterState.Idle);
             }
 
@@ -165,43 +168,56 @@ namespace AniWorldAutoDL_Webpanel.Services
 
         private static void ReadOutput(string output)
         {
-            if (!Regex.IsMatch(output, "time=(.*?) bitrate"))
+            if (!FFMPEGStartTime.HasValue)
+            {
+                FFMPEGStartTime = DateTime.Now;
+            }
+
+            if (!Regex.IsMatch(output, "time=([\\d:]+)"))
                 return;
 
             ConvertProgressModel progress = new();
 
             try
             {
-                Match sizeMatch = Regex.Match(output, "size=.*?(\\d+(?:[\\.\\,]\\d+)*)kB time");
+                Match bitrateMatch = Regex.Match(output, "bitrate=\\s*(\\d+\\.?\\d*)kbits/s");
+
+                if (!bitrateMatch.Success)
+                    return;
+
+                string bitrateText = bitrateMatch.Groups[1].Value;
+                progress.Bitrate = double.Parse(bitrateText);
+
+                Match sizeMatch = Regex.Match(output, "size=\\s*(\\d+)kB time");
 
                 if (!sizeMatch.Success)
                     return;
 
                 string sizeText = sizeMatch.Groups[1].Value;
-                progress.Size = float.Parse(sizeText);
+                progress.Size = long.Parse(sizeText);
 
-                Match timeMatch = Regex.Match(output, "time=(.*?) bitrate");
+                Match timeMatch = Regex.Match(output, "time=([\\d:]+)");
 
                 if (!timeMatch.Success)
                     return;
 
                 string timeText = timeMatch.Groups[1].Value;
                 progress.Time = TimeSpan.Parse(timeText);
-                double progressPercent = 100.0d * ( progress.Time.TotalSeconds / Download.StreamDuration.TotalSeconds );
+
+                long bytesDownloaded = (( progress.Size * 1024 ) - PreviousDownloadSize);
+
+                if (bytesDownloaded > 0)
+                {
+                    progress.KBytePerSecond = (bytesDownloaded / 1024) / ( DateTime.Now - FFMPEGStartTime ).Value.TotalSeconds;
+                    PreviousDownloadSize = progress.Size;
+                }
+
+                double progressPercent = 100.0d * ( progress.Time.TotalSeconds / Download!.StreamDuration.TotalSeconds );
 
                 if (progressPercent <= 0.0)
                     return;
 
                 progress.ProgressPercent = Convert.ToInt32(progressPercent);
-
-
-                Match bitrateMatch = Regex.Match(output, "bitrate=.*?(\\d+(?:[\\.\\,]\\d+)*)kbits");
-
-                if (!bitrateMatch.Success)
-                    return;
-
-                string bitrateText = bitrateMatch.Groups[1].Value;
-                progress.Bitrate = float.Parse(bitrateText);
 
                 Match speedMatch = Regex.Match(output, "speed=.*?(\\d+(?:[\\.\\,]\\d+)*)");
 
@@ -209,7 +225,7 @@ namespace AniWorldAutoDL_Webpanel.Services
                     return;
 
                 string speedText = speedMatch.Groups[1].Value;
-                progress.Speed = float.Parse(speedText);
+                progress.EncodingSpeed = float.Parse(speedText);
 
                 Match fpsMatch = Regex.Match(output, "fps=.*?(\\d+(?:[\\.\\,]\\d+)*)");
 
@@ -228,7 +244,7 @@ namespace AniWorldAutoDL_Webpanel.Services
 
         private static TimeSpan EstimateCompletionTime(double completedPercentage, DateTime downloadStartTime)
         {
-            TimeSpan elapsedTime = DateTime.Now.Subtract(downloadStartTime);            
+            TimeSpan elapsedTime = DateTime.Now.Subtract(downloadStartTime);
 
             double remainingPercentage = 100 - completedPercentage;
             double estimatedTotalTime = elapsedTime.TotalSeconds / completedPercentage * 100;

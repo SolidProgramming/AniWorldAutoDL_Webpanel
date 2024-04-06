@@ -2,12 +2,13 @@
 {
     public class ConvertProgressModel
     {
-        public float Size { get; set; }
+        public long Size { get; set; }
         public TimeSpan Time { get; set; }
-        public float Bitrate { get; set; }
-        public float Speed { get; set; }
-        public float FPS { get; set; }
+        public double Bitrate { get; set; }
+        public double EncodingSpeed { get; set; }
+        public double FPS { get; set; }
         public int ProgressPercent { get; set; }
         public TimeSpan ETA { get; set; }
+        public double KBytePerSecond { get; set; }
     }
 }
