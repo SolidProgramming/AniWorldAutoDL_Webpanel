@@ -1,14 +1,15 @@
 ﻿@inject IUpdateService UpdateService
 
-@if (!UpdateDownloadFinished)
+@if (UpdateInProgress)
 {
-    @if (UpdateInProgress)
-    {
-        <HxProgress Height="3">
-            <HxProgressBar Value="UpdateProgress" Color="ThemeColor.Success" />
-        </HxProgress>
-    }
-    <div class="p-3">
+    <HxProgress Height="3">
+        <HxProgressBar Value="UpdateProgress" Color="ThemeColor.Success" />
+    </HxProgress>
+}
+
+@if (!UpdateDownloadFinished)
+{    
+    <div class="p-3 mb-4">
         @if (CheckingForUpdates)
         {
             <div class="text-center">
@@ -40,7 +41,17 @@
     </div>
 }
 
+@if (ForceDownloadButton)
+{
+    <div class="text-center">
+        <HxButton OnClick="DownloadUpdate" Size="ButtonSize.Small" Color="ThemeColor.Warning">Force Update</HxButton>
+    </div>
+}
+
 @code {
+    [Parameter]
+    public bool ForceDownloadButton { get; set; }
+
     private bool CheckingForUpdates { get; set; }
     private bool UpdateAvailable { get; set; }
     private bool UpdateInProgress { get; set; }
@@ -80,15 +91,18 @@
         UpdateInProgress = true;
         StateHasChanged();
 
-        for (int i = 0; i < 15; i++)
-        {
-            UpdateProgress += 6.666f;
-            StateHasChanged();
-            await Task.Delay(new Random().Next(150, 800));
-        }
+        IProgress<float> progress = new Progress<float>(e => ReportProgress(e));
+
+        await UpdateService.DownloadUpdate(UpdateDetails, progress);
 
         UpdateInProgress = false;
         UpdateDownloadFinished = true;
+        StateHasChanged();
+    }
+
+    private void ReportProgress(float value)
+    {
+        UpdateProgress = value * 100;
         StateHasChanged();
     }
 }

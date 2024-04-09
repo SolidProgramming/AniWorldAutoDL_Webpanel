@@ -1,5 +1,6 @@
 ﻿using System.Xml.Serialization;
 using Updater.Interfaces;
+using Updater.Misc;
 using Updater.Models;
 
 namespace Updater.Services
@@ -13,6 +14,7 @@ namespace Updater.Services
         private bool UpdateAvailable;
 
         private const string UpdatesDetailsUrl = "https://autoupdate.solidserver.xyz/autoupdater_aniworldautodl/latest.xml";
+        private const string UpdatesLatestUrl = "https://autoupdate.solidserver.xyz/autoupdater_aniworldautodl/updates/latest.zip";
              
         public async Task CheckForUpdates(string assemblyVersion)
         {
@@ -61,9 +63,23 @@ namespace Updater.Services
             }
         }
 
-        public void DownloadUpdate(UpdateDetailsModel updateDetails)
+        public async Task DownloadUpdate(UpdateDetailsModel updateDetails, IProgress<float> progress)
         {
-            throw new NotImplementedException();
+            using HttpClient? client = new();
+
+            string directoryPath = Path.Combine(Directory.GetCurrentDirectory(), "updates");
+
+            if (!Directory.Exists(directoryPath))
+                Directory.CreateDirectory(directoryPath);
+
+            string filePath = Path.Combine(directoryPath, "latest.zip");    
+
+            using FileStream? file = new(filePath, FileMode.Create, FileAccess.Write, FileShare.None);
+                                  
+            CancellationTokenSource cts = new();
+            CancellationToken cancellationToken = cts.Token;            
+
+            await client.DownloadAsync(UpdatesLatestUrl, file, progress, cancellationToken);
         }
 
         private static UpdateDetailsModel? ParseUpdateModel(string xmlData)

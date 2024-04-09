@@ -8,6 +8,6 @@ namespace Updater.Interfaces
         event EventHandler<(bool, UpdateDetailsModel?)> OnUpdateCheckFinished;
 
         Task CheckForUpdates(string assemblyVersion);
-        void DownloadUpdate(UpdateDetailsModel updateDetails);
+        Task DownloadUpdate(UpdateDetailsModel updateDetails, IProgress<float> progress);
     }
 }
