@@ -1,6 +1,8 @@
 ﻿using System.Xml.Serialization;
+using Updater.Interfaces;
+using Updater.Models;
 
-namespace AniWorldAutoDL_Webpanel.Services
+namespace Updater.Services
 {
     public class UpdateService : IUpdateService
     {        
@@ -12,7 +14,7 @@ namespace AniWorldAutoDL_Webpanel.Services
 
         private const string UpdatesDetailsUrl = "https://autoupdate.solidserver.xyz/autoupdater_aniworldautodl/latest.xml";
              
-        public async Task CheckForUpdates()
+        public async Task CheckForUpdates(string assemblyVersion)
         {
             if (UpdateAvailable && UpdateDetails is not null)
                 OnUpdateCheckFinished?.Invoke(this, (true, UpdateDetails));
@@ -20,8 +22,6 @@ namespace AniWorldAutoDL_Webpanel.Services
             OnUpdateCheckStarted?.Invoke(this, EventArgs.Empty);
 
             await Task.Delay(2000);
-
-            string assemblyVersion = typeof(Program).Assembly.GetName().Version.ToString();
 
             using HttpClient client = new();
 

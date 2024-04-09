@@ -1,11 +1,13 @@
-﻿namespace AniWorldAutoDL_Webpanel.Interfaces
+﻿using Updater.Models;
+
+namespace Updater.Interfaces
 {
     public interface IUpdateService
     {
         event EventHandler OnUpdateCheckStarted;
         event EventHandler<(bool, UpdateDetailsModel?)> OnUpdateCheckFinished;
 
-        Task CheckForUpdates();
+        Task CheckForUpdates(string assemblyVersion);
         void DownloadUpdate(UpdateDetailsModel updateDetails);
     }
 }

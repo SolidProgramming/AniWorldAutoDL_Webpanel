@@ -80,7 +80,7 @@ builder.Services.AddQuartzHostedService(_ =>
 
 builder.Services.AddSingleton<IApiService, ApiService>();
 builder.Services.AddSingleton<IConverterService, ConverterService>();
-builder.Services.AddSingleton<IUpdateService, UpdateService>();
+builder.Services.AddSingleton<Updater.Interfaces.IUpdateService, Updater.Services.UpdateService>();
 
 builder.Services.AddHxServices();
 builder.Services.AddHxMessenger();

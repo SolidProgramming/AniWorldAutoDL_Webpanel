@@ -1,4 +1,6 @@
-﻿@attribute [Route(Routes.Updates)]
+﻿@using Updater.Components
+@using Updater.Interfaces
+@attribute [Route(Routes.Updates)]
 @inject IUpdateService UpdateService
 
 <PageTitle>Updates</PageTitle>
@@ -8,6 +10,7 @@
 @code {
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        await UpdateService.CheckForUpdates();
+        string assemblyVersion = typeof(Program).Assembly.GetName().Version.ToString();
+        await UpdateService.CheckForUpdates(assemblyVersion);
     }
 }

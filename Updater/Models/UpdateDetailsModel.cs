@@ -1,6 +1,6 @@
 ﻿using System.Xml.Serialization;
 
-namespace AniWorldAutoDL_Webpanel.Models
+namespace Updater.Models
 {
     [XmlRoot("item")]
     public class UpdateDetailsModel

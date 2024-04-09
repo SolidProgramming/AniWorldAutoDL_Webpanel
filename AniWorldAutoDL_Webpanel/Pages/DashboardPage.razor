@@ -1,5 +1,7 @@
 ﻿@using Microsoft.AspNetCore.Components.Rendering
 @using System.Net
+@using Updater.Components
+@using Updater.Interfaces
 @attribute [Route(Routes.Dashboard)]
 @attribute [Route(Routes.Index)]
 @inject IHxMessengerService ToastService
@@ -260,7 +262,8 @@
 
         if (firstRender && base.ToString().IsFirstRender())
         {
-            await UpdateService.CheckForUpdates();
+            string assemblyVersion = typeof(Program).Assembly.GetName().Version.ToString();
+            await UpdateService.CheckForUpdates(assemblyVersion);
         }
 
         RenderHelper.ComponentSetRendered(base.ToString()!);

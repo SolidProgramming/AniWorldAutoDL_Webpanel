@@ -1,14 +1,13 @@
 ﻿@inject IUpdateService UpdateService
 
-@if (UpdateInProgress)
-{
-    <HxProgress Height="3">
-        <HxProgressBar Value="UpdateProgress" Color="ThemeColor.Success" />
-    </HxProgress>
-}
-
 @if (!UpdateDownloadFinished)
 {
+    @if (UpdateInProgress)
+    {
+        <HxProgress Height="3">
+            <HxProgressBar Value="UpdateProgress" Color="ThemeColor.Success" />
+        </HxProgress>
+    }
     <div class="p-3">
         @if (CheckingForUpdates)
         {
