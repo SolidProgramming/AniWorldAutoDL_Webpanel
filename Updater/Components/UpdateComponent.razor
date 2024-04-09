@@ -8,7 +8,7 @@
 }
 
 @if (!UpdateDownloadFinished)
-{    
+{
     <div class="p-3 mb-4">
         @if (CheckingForUpdates)
         {
@@ -40,8 +40,14 @@
         }
     </div>
 }
+else
+{
+    <div class="p-3 mb-4 text-center">
+        <HxButton OnClick="InstallUpdate" Icon="BootstrapIcon.Dropbox" Size="ButtonSize.Small" CssClass="me-2 align-middle d-inline" Color="ThemeColor.Success">Update installieren</HxButton>
+    </div>
+}
 
-@if (ForceDownloadButton)
+@if (ForceDownloadButton && !UpdateDownloadFinished)
 {
     <div class="text-center">
         <HxButton OnClick="DownloadUpdate" Size="ButtonSize.Small" Color="ThemeColor.Warning">Force Update</HxButton>
@@ -94,6 +100,7 @@
         IProgress<float> progress = new Progress<float>(e => ReportProgress(e));
 
         await UpdateService.DownloadUpdate(UpdateDetails, progress);
+        await Updater.Services.UpdateService.UnpackUpdate();
 
         UpdateInProgress = false;
         UpdateDownloadFinished = true;
@@ -104,5 +111,12 @@
     {
         UpdateProgress = value * 100;
         StateHasChanged();
+    }
+
+    private void InstallUpdate()
+    {
+        string starterPath = "Starter.exe";
+        System.Diagnostics.Process.Start(starterPath);
+        Environment.Exit(0);
     }
 }

@@ -1,4 +1,5 @@
-﻿using System.Xml.Serialization;
+﻿using System.IO.Compression;
+using System.Xml.Serialization;
 using Updater.Interfaces;
 using Updater.Misc;
 using Updater.Models;
@@ -6,7 +7,7 @@ using Updater.Models;
 namespace Updater.Services
 {
     public class UpdateService : IUpdateService
-    {        
+    {
         public event EventHandler? OnUpdateCheckStarted;
         public event EventHandler<(bool, UpdateDetailsModel?)>? OnUpdateCheckFinished;
 
@@ -15,7 +16,10 @@ namespace Updater.Services
 
         private const string UpdatesDetailsUrl = "https://autoupdate.solidserver.xyz/autoupdater_aniworldautodl/latest.xml";
         private const string UpdatesLatestUrl = "https://autoupdate.solidserver.xyz/autoupdater_aniworldautodl/updates/latest.zip";
-             
+
+        private static readonly string DownloadsPath = Path.Combine(Directory.GetCurrentDirectory(), "Updates");
+        private static readonly string AssemblyPath = Path.Combine(DownloadsPath, "latest.zip");
+
         public async Task CheckForUpdates(string assemblyVersion)
         {
             if (UpdateAvailable && UpdateDetails is not null)
@@ -52,7 +56,7 @@ namespace Updater.Services
                         UpdateDetails = updateDetails;
                         OnUpdateCheckFinished?.Invoke(this, (UpdateAvailable, UpdateDetails));
                         return;
-                    }      
+                    }
                 }
 
                 OnUpdateCheckFinished?.Invoke(this, (false, default));
@@ -67,19 +71,35 @@ namespace Updater.Services
         {
             using HttpClient? client = new();
 
-            string directoryPath = Path.Combine(Directory.GetCurrentDirectory(), "updates");
+            if (!Directory.Exists(DownloadsPath))
+                Directory.CreateDirectory(DownloadsPath);
 
-            if (!Directory.Exists(directoryPath))
-                Directory.CreateDirectory(directoryPath);
+            using FileStream? file = new(AssemblyPath, FileMode.Create, FileAccess.Write, FileShare.None);
 
-            string filePath = Path.Combine(directoryPath, "latest.zip");    
-
-            using FileStream? file = new(filePath, FileMode.Create, FileAccess.Write, FileShare.None);
-                                  
             CancellationTokenSource cts = new();
-            CancellationToken cancellationToken = cts.Token;            
+            CancellationToken cancellationToken = cts.Token;
 
             await client.DownloadAsync(UpdatesLatestUrl, file, progress, cancellationToken);
+        }
+
+        public static async Task UnpackUpdate()
+        {
+            await Task.Run(() =>
+            {
+                try
+                {
+                    ZipFile.ExtractToDirectory(AssemblyPath, DownloadsPath, true);
+                }
+                catch (Exception)
+                {
+                    throw;
+                }
+                finally
+                {
+                    if (File.Exists(AssemblyPath))
+                        File.Delete(AssemblyPath);
+                }
+            });
         }
 
         private static UpdateDetailsModel? ParseUpdateModel(string xmlData)

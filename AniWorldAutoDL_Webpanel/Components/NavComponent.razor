@@ -4,7 +4,7 @@
 
 <HxSidebar CssClass="sticky-top">
     <HeaderTemplate>
-
+        <h6 class="text-secondary ps-2 pt-1 pb-2" style="color: #212529">v.@(GetAssemblyVersion())</h6>
     </HeaderTemplate>
     <ItemsTemplate>
         <HxSidebarItem Icon="BootstrapIcon.Columns" Href="@Routes.Dashboard">
@@ -47,5 +47,8 @@
 </HxSidebar>
 
 @code {
-    
+    private string? GetAssemblyVersion()
+    {
+        return typeof(Program).Assembly.GetName().Version!.ToString();
+    }
 }
