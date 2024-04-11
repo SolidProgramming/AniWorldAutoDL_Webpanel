@@ -100,18 +100,20 @@ namespace AniWorldAutoDL_Webpanel.Classes
             {
                 logMessage = $"{sto.Host} {ErrorMessage.HosterUnavailable}";
                 CronJobErrorEvent?.Invoke(MessageType.Error, logMessage);
+                await apiService.SendCaptchaNotification(sto);
             }
 
             if (!hosterReachableAniworld)
             {
                 logMessage = $"{aniworld.Host} {ErrorMessage.HosterUnavailable}";
                 CronJobErrorEvent?.Invoke(MessageType.Error, logMessage);
+                await apiService.SendCaptchaNotification(aniworld);
             }
 
             if (!hosterReachableSTO || !hosterReachableAniworld)
             {
                 SetCronJobDownloads(0, 0);
-                SetCronJobState(CronJobState.WaitForNextCycle);
+                SetCronJobState(CronJobState.WaitForNextCycle);                
                 return;
             }
 

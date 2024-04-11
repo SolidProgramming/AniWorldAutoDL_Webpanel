@@ -47,6 +47,10 @@ namespace AniWorldAutoDL_Webpanel.Services
         {
             return await PostAsync<bool>("removeFinishedDownload", download);
         }
+        public async Task<bool> SendCaptchaNotification(HosterModel hoster)
+        {
+            return await GetAsync<bool>("captchaNotify", new Dictionary<string, string>() { { "streamingPortal", hoster.Host } });
+        }
         public async Task<T?> GetAsync<T>(string uri)
         {
             HttpRequestMessage request = new(HttpMethod.Get, uri);

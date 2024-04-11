@@ -26,6 +26,15 @@
                 <HxCheckbox CssClass="mt-2" TextCssClass="text-warning" Inline="true" @bind-Value="Autostart" Text="Autom. Downloads starten nach dem Einloggen" />
             </div>
         </div>
+        <div class="col-sm-auto">
+            <div class="px-3 py-2">
+                <div class="my-2">
+                    <HxIcon CssClass="d-inline fs-5 text-primary" Icon="BootstrapIcon.Telegram"></HxIcon>
+                    <h5 class="d-inline px-2">Telegram:</h5>
+                </div>
+                <HxCheckbox CssClass="mt-2" TextCssClass="text-warning" Inline="true" @bind-Value="NotifyOnCaptcha" Text="Benachrichtigen wenn ein Captcha gelöst werden muss" />
+            </div>
+        </div>
     </div>
     <div class="row mt-4">
         <div class="col-6">
@@ -40,4 +49,5 @@
 @code {
     private bool Autostart { get; set; }
     private int CheckInterval { get; set; }
+    private bool NotifyOnCaptcha { get; set; }
 }
