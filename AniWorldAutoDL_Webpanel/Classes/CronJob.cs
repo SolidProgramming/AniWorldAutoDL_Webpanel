@@ -88,6 +88,8 @@ namespace AniWorldAutoDL_Webpanel.Classes
 
             SetCronJobState(CronJobState.CheckingForDownloads);
 
+            DownloaderPreferencesModel? downloaderPreferences = await apiService.GetAsync<DownloaderPreferencesModel?>("getDownloaderPreferences");
+
             HosterModel? sto = HosterHelper.GetHosterByEnum(Hoster.STO);
             HosterModel? aniworld = HosterHelper.GetHosterByEnum(Hoster.AniWorld);
 
@@ -100,20 +102,24 @@ namespace AniWorldAutoDL_Webpanel.Classes
             {
                 logMessage = $"{sto.Host} {ErrorMessage.HosterUnavailable}";
                 CronJobErrorEvent?.Invoke(MessageType.Error, logMessage);
-                await apiService.SendCaptchaNotification(sto);
+
+                if (downloaderPreferences is not null && downloaderPreferences.TelegramCaptchaNotification)
+                    await apiService.SendCaptchaNotification(sto);
             }
 
             if (!hosterReachableAniworld)
             {
                 logMessage = $"{aniworld.Host} {ErrorMessage.HosterUnavailable}";
                 CronJobErrorEvent?.Invoke(MessageType.Error, logMessage);
-                await apiService.SendCaptchaNotification(aniworld);
+
+                if (downloaderPreferences is not null && downloaderPreferences.TelegramCaptchaNotification)
+                    await apiService.SendCaptchaNotification(aniworld);
             }
 
             if (!hosterReachableSTO || !hosterReachableAniworld)
             {
                 SetCronJobDownloads(0, 0);
-                SetCronJobState(CronJobState.WaitForNextCycle);                
+                SetCronJobState(CronJobState.WaitForNextCycle);
                 return;
             }
 
