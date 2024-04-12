@@ -51,6 +51,10 @@ namespace AniWorldAutoDL_Webpanel.Services
         {
             return await GetAsync<bool>("captchaNotify", new Dictionary<string, string>() { { "streamingPortal", hoster.Host } });
         }
+        public async Task<bool> SetDownloaderPreferences(DownloaderPreferencesModel downloaderPreferences)
+        {
+            return await PostAsync<bool>("setDownloaderPreferences", downloaderPreferences);
+        }
         public async Task<T?> GetAsync<T>(string uri)
         {
             HttpRequestMessage request = new(HttpMethod.Get, uri);
@@ -114,6 +118,6 @@ namespace AniWorldAutoDL_Webpanel.Services
             }
 
             return JsonConvert.DeserializeObject<T>(await response.Content.ReadAsStringAsync());
-        }       
+        }        
     }
 }

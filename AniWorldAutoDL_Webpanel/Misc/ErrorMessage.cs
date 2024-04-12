@@ -15,8 +15,10 @@
         internal const string ConverterServiceNotInitialized = "Converter Service is not initialized! Call IConverterService.Init() on startup.";
         internal const string CronJobNotInitialized = "Cron Job/Service is not initialized! Call c on startup.";
         internal const string HttpRequestException = "Error requesting data from hoster!";
-        internal const string SkipDownloadFail = "Beim überspringen des Downloads für die ausgewählte Episode ist ein Fehler aufgetreten!";
-        internal const string RemoveDownloadFail = "Beim löschen des Downloads für die ausgewählte Episode ist ein Fehler aufgetreten!";
+        internal const string SkipDownloadFail = "Beim Überspringen des Downloads für die ausgewählte Episode ist ein Fehler aufgetreten!";
+        internal const string RemoveDownloadFail = "Beim Löschen des Downloads für die ausgewählte Episode ist ein Fehler aufgetreten!";
         internal const string RemoveDBEpisodeDownloadFail = "Beim löschen des Downloads auf Datenbankebene ist ein Fehler aufgetreten!";
+        internal const string DownloaderPreferencesSaveFail = "Beim Speichern der Einstellungen ist ein Fehler aufgetreten!";
+        internal const string RetrieveDownloaderPreferencesFail = "Beim Abrufen der Einstellungen ist ein Fehler aufgetreten!";
     }
 }

@@ -14,5 +14,6 @@
         internal const string EpisodeDownloadSkipped = "Download übersprungen. Episode wird beim nächsten Durchgang heruntergeladen.";
         internal const string EpisodeDownloadSkippedFileExists = "Download übersprungen. Datei existiert bereits.";
         internal const string NoDownloadsInQueue = "Es sind keine Downloads in der Warteschlange!";
+        internal const string DownloaderPreferencesSaved = "Deine Einstellungen wurden gespeichert!";
     }
 }
