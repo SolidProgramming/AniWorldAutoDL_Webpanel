@@ -23,7 +23,7 @@
             <div class="col-sm-auto">
                 <div class="px-3 py-2">
                     <div class="my-2">
-                        <HxIcon CssClass="d-inline fs-5 text-primary" Icon="BootstrapIcon.Activity"></HxIcon>
+                        <HxIcon CssClass="d-inline fs-5 text-primary" Icon="BootstrapIcon.PlayFill"></HxIcon>
                         <h5 class="d-inline px-2">Start:</h5>
                     </div>
                     <HxCheckbox CssClass="mt-2" TextCssClass="text-warning" Inline="true" @bind-Value="DownloaderPreferences.AutoStart" Text="Autom. Downloads starten nach dem Einloggen" />
@@ -37,6 +37,29 @@
                     </div>
                     <HxCheckbox CssClass="mt-2" TextCssClass="text-warning" Inline="true" @bind-Value="DownloaderPreferences.TelegramCaptchaNotification" Text="Benachrichtigen wenn ein Captcha gelöst werden muss" />
                 </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-auto">
+                <div class="px-3 py-2">
+                    <div class="my-2">
+                        <HxIcon CssClass="d-inline fs-5 text-primary" Icon="BootstrapIcon.Activity"></HxIcon>
+                        <h5 class="d-inline px-2">Proxy:</h5>
+                    </div>
+                    <HxCheckbox CssClass="mt-2" TextCssClass="d-inline text-warning" Inline="true" @bind-Value="DownloaderPreferences.UseProxy" Text="Proxy nutzen" />
+                </div>
+            </div>
+            <div class="col mt-3">
+                <label class="text-warning my-2">Proxy Adresse:</label>
+                <HxInputText Placeholder="p.webshare.io" InputSize="InputSize.Small" @bind-Value="DownloaderPreferences.ProxyUri" />
+            </div>
+            <div class="col mt-3">
+                <label class="text-warning my-2">Benutzername:</label>
+                <HxInputText InputSize="InputSize.Small" @bind-Value="DownloaderPreferences.ProxyUsername" />
+            </div>
+            <div class="col mt-3">
+                <label class="text-warning my-2">Passwort:</label>
+                <HxInputText Type="InputType.Password" InputSize="InputSize.Small" @bind-Value="DownloaderPreferences.ProxyPassword" />
             </div>
         </div>
         <div class="row mt-4">
