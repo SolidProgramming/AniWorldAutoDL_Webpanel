@@ -67,10 +67,7 @@ builder.Services.AddServerSideBlazor();
 
 builder.Services.AddHttpClient<IApiService, ApiService>();
 
-builder.Services.AddQuartz(_ =>
-{
-    _.AddJobAndTrigger<CronJob>(15);
-});
+builder.Services.AddQuartz();
 
 builder.Services.AddQuartzHostedService(_ =>
 {
@@ -81,6 +78,7 @@ builder.Services.AddQuartzHostedService(_ =>
 builder.Services.AddSingleton<IApiService, ApiService>();
 builder.Services.AddSingleton<IConverterService, ConverterService>();
 builder.Services.AddSingleton<Updater.Interfaces.IUpdateService, Updater.Services.UpdateService>();
+builder.Services.AddSingleton<IQuartzService, QuartzService>();
 
 builder.Services.AddHxServices();
 builder.Services.AddHxMessenger();
@@ -100,6 +98,21 @@ converterService.Init();
 
 IApiService apiService = app.Services.GetRequiredService<IApiService>();
 apiService.Init();
+
+DownloaderPreferencesModel? downloaderPreferences = await apiService.GetAsync<DownloaderPreferencesModel?>("getDownloaderPreferences");
+
+IQuartzService quartz = app.Services.GetRequiredService<IQuartzService>();
+await quartz.Init();
+
+if (downloaderPreferences is null)
+{
+    await quartz.CreateJob(15);
+}
+else
+{
+    await quartz.CreateJob(downloaderPreferences.Interval);
+}
+
 
 OpenBrowser(hostUrl);
 
