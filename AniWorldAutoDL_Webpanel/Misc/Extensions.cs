@@ -102,5 +102,12 @@ namespace AniWorldAutoDL_Webpanel.Misc
                     yield return value;
             }
         }
+
+        public static async Task<(bool success, string? ipv4)> GetIPv4(this HttpClient httpClient)
+        {
+            string result = await httpClient.GetStringAsync("https://api.ipify.org/");
+
+            return (!string.IsNullOrEmpty(result), result);
+        }
     }
 }

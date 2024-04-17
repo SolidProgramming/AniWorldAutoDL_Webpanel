@@ -1,6 +1,5 @@
-﻿using System.Text.RegularExpressions;
+﻿using System.Net;
 using HtmlAgilityPack;
-using PuppeteerSharp;
 
 namespace AniWorldAutoDL_Webpanel.Misc
 {
@@ -12,19 +11,31 @@ namespace AniWorldAutoDL_Webpanel.Misc
             { new HosterModel("aniworld.to", Hoster.AniWorld, "https://aniworld.to/") },
         };
 
-        internal static async Task<bool> HosterReachable(HosterModel hoster)
+        internal static async Task<bool> HosterReachable(HosterModel hoster, WebProxy? proxy = default)
         {
+            HttpClient? httpClient = default;
+
             try
             {
-                using HttpClient client = new();
-                client.Timeout = TimeSpan.FromSeconds(5);
+                if (proxy is null)
+                {
+                    httpClient = HttpClientFactory.CreateHttpClient();
+                }
+                else
+                {
+                    httpClient = HttpClientFactory.CreateHttpClient(proxy);
+                }
 
-                HttpResponseMessage responseMessage = await client.GetAsync(hoster.BrowserUrl);
+                httpClient.Timeout = TimeSpan.FromSeconds(5);
+
+                HttpResponseMessage responseMessage = await httpClient.GetAsync(hoster.BrowserUrl);
 
                 if (!responseMessage.IsSuccessStatusCode)
                     return false;
 
                 string html = await responseMessage.Content.ReadAsStringAsync();
+
+                httpClient.Dispose();
 
                 if (string.IsNullOrEmpty(html))
                     return false;
@@ -33,6 +44,7 @@ namespace AniWorldAutoDL_Webpanel.Misc
             }
             catch (Exception)
             {
+                httpClient?.Dispose();
                 return false;
             }
         }

@@ -1,6 +1,7 @@
 ﻿using HtmlAgilityPack;
 using PuppeteerSharp;
 using Quartz;
+using System.Net;
 using System.Text.RegularExpressions;
 using System.Web;
 
@@ -30,6 +31,33 @@ namespace AniWorldAutoDL_Webpanel.Classes
 
         public static int DownloadCount { get; set; }
         public static int LanguageDownloadCount { get; set; }
+
+        private static HttpClient? HttpClient;
+
+        public static async Task<bool> InitAsync(WebProxy? proxy = null)
+        {
+            if (proxy is null)
+            {
+                HttpClient = HttpClientFactory.CreateHttpClient<CronJob>();
+            }
+            else
+            {
+                HttpClient = HttpClientFactory.CreateHttpClient<CronJob>(proxy);
+            }
+
+            using HttpClient noProxyHttpClient = HttpClientFactory.CreateHttpClient();
+
+            (bool success, string? ipv4) = await HttpClient.GetIPv4();
+            (bool noProxySuccess, string? NoProxyIpv4) = await noProxyHttpClient.GetIPv4();
+
+            if (!success || !noProxySuccess)
+                return false;
+
+            if (ipv4 == NoProxyIpv4)
+                return false;
+
+            return true;
+        }
 
         private bool RegisteredShutdown { get; set; }
 
@@ -93,8 +121,20 @@ namespace AniWorldAutoDL_Webpanel.Classes
             HosterModel? sto = HosterHelper.GetHosterByEnum(Hoster.STO);
             HosterModel? aniworld = HosterHelper.GetHosterByEnum(Hoster.AniWorld);
 
-            bool hosterReachableSTO = await HosterHelper.HosterReachable(sto);
-            bool hosterReachableAniworld = await HosterHelper.HosterReachable(aniworld);
+            WebProxy? proxy = default;
+
+            if (downloaderPreferences is not null && downloaderPreferences.UseProxy)
+            {
+                proxy = ProxyFactory.CreateProxy(new ProxyAccountModel()
+                {
+                    Uri = downloaderPreferences.ProxyUri,
+                    Username = downloaderPreferences.ProxyUsername,
+                    Password = downloaderPreferences.ProxyPassword
+                });
+            }
+
+            bool hosterReachableSTO = await HosterHelper.HosterReachable(sto, proxy);
+            bool hosterReachableAniworld = await HosterHelper.HosterReachable(aniworld, proxy);
 
             string? logMessage;
 
@@ -172,14 +212,12 @@ namespace AniWorldAutoDL_Webpanel.Classes
                 }
                 else { continue; }
 
-                using HttpClient client = new();
-
                 string? html;
                 bool hasError = false;
 
                 try
                 {
-                    html = await client.GetStringAsync(url);
+                    html = await HttpClient.GetStringAsync(url);
                 }
                 catch (HttpRequestException ex)
                 {
@@ -229,14 +267,14 @@ namespace AniWorldAutoDL_Webpanel.Classes
                     }
                     else { continue; }
 
-                    string? m3u8Url = await GetEpisodeM3U8(url);
+                    string? m3u8Url = await GetEpisodeM3U8(url, downloaderPreferences);
 
                     if (string.IsNullOrEmpty(m3u8Url))
                         continue;
 
                     episodeDownload.Download.Name = $"{originalEpisodeName.GetValidFileName()}[{language}]";
 
-                    CommandResultExt? result = await converterService.StartDownload(m3u8Url, episodeDownload.Download, settings.DownloadPath);
+                    CommandResultExt? result = await converterService.StartDownload(m3u8Url, episodeDownload.Download, settings.DownloadPath, downloaderPreferences);
 
                     finishedDownloadsCount++;
 
@@ -320,14 +358,23 @@ namespace AniWorldAutoDL_Webpanel.Classes
             }
         }
 
-        private async Task<string?> GetEpisodeM3U8(string streamUrl)
+        private async Task<string?> GetEpisodeM3U8(string streamUrl, DownloaderPreferencesModel downloaderPreferences)
         {
             Browser ??= await Puppeteer.LaunchAsync(new LaunchOptions
             {
-                Headless = true,
+                Headless = false,
+                Args = [$"--proxy-server={downloaderPreferences.ProxyUri}"]
             });
 
             using IPage? page = await Browser.NewPageAsync();
+
+            if (downloaderPreferences.UseProxy)
+            {
+                await page.AuthenticateAsync(new Credentials { 
+                    Username = downloaderPreferences.ProxyUsername, 
+                    Password = downloaderPreferences.ProxyPassword
+                });
+            }
 
             try
             {

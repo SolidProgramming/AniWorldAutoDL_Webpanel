@@ -4,6 +4,7 @@ global using AniWorldAutoDL_Webpanel.Interfaces;
 global using AniWorldAutoDL_Webpanel.Services;
 global using AniWorldAutoDL_Webpanel.Enums;
 global using AniWorldAutoDL_Webpanel.Misc;
+global using AniWorldAutoDL_Webpanel.Factories;
 using Quartz;
 using Havit.Blazor.Components.Web;
 using System.Diagnostics;
@@ -29,26 +30,7 @@ if (AnotherInstanceExists())
     return;
 }
 
-HosterModel? sto = HosterHelper.GetHosterByEnum(Hoster.STO);
-HosterModel? aniworld = HosterHelper.GetHosterByEnum(Hoster.AniWorld);
-
-bool hosterReachableSTO = await HosterHelper.HosterReachable(sto);
-
-if (!hosterReachableSTO)
-{
-    OpenBrowser(sto.BrowserUrl);
-    return;
-}
-
-bool hosterReachableAniworld = await HosterHelper.HosterReachable(aniworld);
-
-if (!hosterReachableAniworld)
-{
-    OpenBrowser(aniworld.BrowserUrl);
-    return;
-}
-
-Console.WriteLine("Downloading Chrome");
+await Console.Out.WriteLineAsync("Downloading Chrome");
 using var browserFetcher = new BrowserFetcher();
 await browserFetcher.DownloadAsync();
 
@@ -99,7 +81,45 @@ converterService.Init();
 IApiService apiService = app.Services.GetRequiredService<IApiService>();
 apiService.Init();
 
+HosterModel? sto = HosterHelper.GetHosterByEnum(Hoster.STO);
+HosterModel? aniworld = HosterHelper.GetHosterByEnum(Hoster.AniWorld);
+
 DownloaderPreferencesModel? downloaderPreferences = await apiService.GetAsync<DownloaderPreferencesModel?>("getDownloaderPreferences");
+
+WebProxy? proxy = default;
+
+if (downloaderPreferences is not null && downloaderPreferences.UseProxy)
+{
+    await Console.Out.WriteLineAsync($"Proxy configured: {downloaderPreferences.ProxyUri}");
+
+    proxy = ProxyFactory.CreateProxy(new ProxyAccountModel()
+    {
+        Uri = downloaderPreferences.ProxyUri,
+        Username = downloaderPreferences.ProxyUsername,
+        Password = downloaderPreferences.ProxyPassword
+    });
+}
+
+await Console.Out.WriteLineAsync("Checking if Hosters are reachable...");
+
+bool hosterReachableSTO = await HosterHelper.HosterReachable(sto, proxy);
+
+if (!hosterReachableSTO)
+{
+    OpenBrowser(sto.BrowserUrl);
+    return;
+}
+
+bool hosterReachableAniworld = await HosterHelper.HosterReachable(aniworld, proxy);
+
+if (!hosterReachableAniworld)
+{
+    OpenBrowser(aniworld.BrowserUrl);
+    return;
+}
+
+await Console.Out.WriteLineAsync("Initializing Cronjob and HttpClients...");
+await CronJob.InitAsync(proxy);
 
 IQuartzService quartz = app.Services.GetRequiredService<IQuartzService>();
 await quartz.Init();

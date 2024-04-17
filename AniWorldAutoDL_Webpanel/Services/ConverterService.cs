@@ -60,7 +60,7 @@ namespace AniWorldAutoDL_Webpanel.Services
             logger.LogInformation($"{DateTime.Now} | {InfoMessage.ConverterChangedState} {state}");
         }
 
-        public async Task<CommandResultExt?> StartDownload(string streamUrl, DownloadModel download, string downloadPath)
+        public async Task<CommandResultExt?> StartDownload(string streamUrl, DownloadModel download, string downloadPath, DownloaderPreferencesModel downloaderPreferences)
         {
             if (!IsInitialized)
             {
@@ -94,7 +94,7 @@ namespace AniWorldAutoDL_Webpanel.Services
 
             ConverterStateChanged?.Invoke(ConverterState.Downloading, download);
 
-            string args = $"-y -i \"{streamUrl}\" -acodec copy -vcodec copy -sn \"{filePath}\" -f matroska";
+            string args = $"-y -http_proxy \"{downloaderPreferences.ProxyUri}\" -i \"{streamUrl}\" -acodec copy -vcodec copy -sn \"{filePath}\" -f matroska";
 
             string binPath = Helper.GetFFMPEGPath();
 

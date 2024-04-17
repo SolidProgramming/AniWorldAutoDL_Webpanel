@@ -1,5 +1,4 @@
 ﻿using Quartz;
-using Telegram.Bot.Types;
 
 namespace AniWorldAutoDL_Webpanel.Services
 {
@@ -10,7 +9,7 @@ namespace AniWorldAutoDL_Webpanel.Services
 
         private IScheduler? Scheduler;
 
-        private string JobName;
+        private string? JobName;
         private JobKey? JobKey;
 
         public async Task Init()
@@ -24,7 +23,7 @@ namespace AniWorldAutoDL_Webpanel.Services
 
         public async Task CreateJob(int intervalInMinutes)
         {
-            var job = JobBuilder.Create<CronJob>()
+            IJobDetail? job = JobBuilder.Create<CronJob>()
                        .WithIdentity(JobKey)
                        .Build();
 
