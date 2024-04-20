@@ -362,8 +362,7 @@ namespace AniWorldAutoDL_Webpanel.Classes
         {
             Browser ??= await Puppeteer.LaunchAsync(new LaunchOptions
             {
-                Headless = false,
-                Args = [$"--proxy-server={downloaderPreferences.ProxyUri}"]
+                Headless = false,                
             });
 
             using IPage? page = await Browser.NewPageAsync();
@@ -388,6 +387,13 @@ namespace AniWorldAutoDL_Webpanel.Classes
 
                 HtmlDocument htmlDocument = new();
                 htmlDocument.LoadHtml(html);
+
+                Match m3u8NodeMatch = new Regex("https://delivery-node-(.*?)\\);").Match(html);
+
+                if (m3u8NodeMatch.Success)
+                {
+                    return HttpUtility.HtmlDecode(m3u8NodeMatch.Value.TrimEnd('"', ')', ';'));
+                }
 
                 Match hlsMatch = new Regex("'hls': '(.*?)',").Match(html);
 
