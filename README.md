@@ -6,4 +6,4 @@
 ![](https://reducemy.link/p/4WRCGk)
 
 ## Settings
-![](https://reducemy.link/p/4WRCGm)
+![](https://reducemy.link/p/4WRCGn)
