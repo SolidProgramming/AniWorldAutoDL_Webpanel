@@ -3,7 +3,7 @@
 [C#/Blazor] Webpanel and AutoDownloader for AniWorldReminder
 
 ## Dashboard
-![](https://reducemy.link/4WRJd8)
+![](https://reducemy.link/p/4WRCGk)
 
 ## Settings
 ![](https://reducemy.link/p/4WRCFC)
