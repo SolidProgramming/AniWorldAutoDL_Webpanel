@@ -123,15 +123,15 @@ namespace AniWorldAutoDL_Webpanel.Classes
 
             WebProxy? proxy = default;
 
-            if (downloaderPreferences is not null && downloaderPreferences.UseProxy)
-            {
-                proxy = ProxyFactory.CreateProxy(new ProxyAccountModel()
-                {
-                    Uri = downloaderPreferences.ProxyUri,
-                    Username = downloaderPreferences.ProxyUsername,
-                    Password = downloaderPreferences.ProxyPassword
-                });
-            }
+            //if (downloaderPreferences is not null && downloaderPreferences.UseProxy)
+            //{
+            //    proxy = ProxyFactory.CreateProxy(new ProxyAccountModel()
+            //    {
+            //        Uri = downloaderPreferences.ProxyUri,
+            //        Username = downloaderPreferences.ProxyUsername,
+            //        Password = downloaderPreferences.ProxyPassword
+            //    });
+            //}
 
             bool hosterReachableSTO = await HosterHelper.HosterReachable(sto, proxy);
             bool hosterReachableAniworld = await HosterHelper.HosterReachable(aniworld, proxy);
@@ -362,18 +362,18 @@ namespace AniWorldAutoDL_Webpanel.Classes
         {
             Browser ??= await Puppeteer.LaunchAsync(new LaunchOptions
             {
-                Headless = false,                
+                Headless = true,                
             });
 
             using IPage? page = await Browser.NewPageAsync();
 
-            if (downloaderPreferences.UseProxy)
-            {
-                await page.AuthenticateAsync(new Credentials { 
-                    Username = downloaderPreferences.ProxyUsername, 
-                    Password = downloaderPreferences.ProxyPassword
-                });
-            }
+            //if (downloaderPreferences.UseProxy)
+            //{
+            //    await page.AuthenticateAsync(new Credentials { 
+            //        Username = downloaderPreferences.ProxyUsername, 
+            //        Password = downloaderPreferences.ProxyPassword
+            //    });
+            //}
 
             try
             {

@@ -39,28 +39,32 @@
                 </div>
             </div>
         </div>
-        <div class="row">
-            <div class="col-md-auto">
-                <div class="px-3 py-2">
-                    <div class="my-2">
-                        <HxIcon CssClass="d-inline fs-5 text-primary" Icon="BootstrapIcon.Activity"></HxIcon>
-                        <h5 class="d-inline px-2">Proxy:</h5>
+        <div class="row p-2 pb-2 border rounded-4 border-secondary">
+            <HxAlert Color="ThemeColor.Secondary" CssClass="mt-1">
+                <HxIcon CssClass="pe-1" Icon="@BootstrapIcon.ExclamationCircleFill" />
+                Coming Soon
+            </HxAlert>
+                <div class="col-md-auto">
+                    <div class="px-3 py-2">
+                        <div class="my-2">
+                            <HxIcon CssClass="d-inline fs-5 text-primary" Icon="BootstrapIcon.Activity"></HxIcon>
+                            <h5 class="d-inline px-2">Proxy:</h5>
+                        </div>
+                        <HxCheckbox Enabled=false CssClass="mt-2" TextCssClass="d-inline text-warning" Inline="true" @bind-Value="DownloaderPreferences.UseProxy" Text="Proxy nutzen" />
                     </div>
-                    <HxCheckbox CssClass="mt-2" TextCssClass="d-inline text-warning" Inline="true" @bind-Value="DownloaderPreferences.UseProxy" Text="Proxy nutzen" />
                 </div>
-            </div>
-            <div class="col mt-3">
-                <label class="text-warning my-2">Proxy Adresse:</label>
-                <HxInputText Placeholder="p.webshare.io" InputSize="InputSize.Small" @bind-Value="DownloaderPreferences.ProxyUri" />
-            </div>
-            <div class="col mt-3">
-                <label class="text-warning my-2">Benutzername:</label>
-                <HxInputText InputSize="InputSize.Small" @bind-Value="DownloaderPreferences.ProxyUsername" />
-            </div>
-            <div class="col mt-3">
-                <label class="text-warning my-2">Passwort:</label>
-                <HxInputText Type="InputType.Password" InputSize="InputSize.Small" @bind-Value="DownloaderPreferences.ProxyPassword" />
-            </div>
+                <div class="col mt-3">
+                    <label class="text-warning my-2">Proxy Adresse:</label>
+                <HxInputText Enabled=false Placeholder="p.webshare.io" InputSize="InputSize.Small" @bind-Value="DownloaderPreferences.ProxyUri" />
+                </div>
+                <div class="col mt-3">
+                    <label class="text-warning my-2">Benutzername:</label>
+                <HxInputText Enabled=false InputSize="InputSize.Small" @bind-Value="DownloaderPreferences.ProxyUsername" />
+                </div>
+                <div class="col mt-3">
+                    <label class="text-warning my-2">Passwort:</label>
+                <HxInputText Enabled=false Type="InputType.Password" InputSize="InputSize.Small" @bind-Value="DownloaderPreferences.ProxyPassword" />
+                </div>         
         </div>
         <div class="row mt-4">
             <div class="col-6">
