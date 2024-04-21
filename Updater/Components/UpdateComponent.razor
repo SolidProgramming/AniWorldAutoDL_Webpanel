@@ -5,6 +5,9 @@
     <HxProgress Height="3">
         <HxProgressBar Value="UpdateProgress" Color="ThemeColor.Success" />
     </HxProgress>
+    <div class="text-center text-success mt-2">
+        <h5>@($"{UpdateProgress:F0}%")</h5>
+    </div>
 }
 
 @if (!UpdateDownloadFinished)
@@ -47,7 +50,7 @@ else
     </div>
 }
 
-@if (ForceDownloadButton && !UpdateDownloadFinished)
+@if (ForceDownloadButton && !UpdateDownloadFinished && !CheckingForUpdates)
 {
     <div class="text-center">
         <HxButton OnClick="DownloadUpdate" Size="ButtonSize.Small" Color="ThemeColor.Warning">Force Update</HxButton>
