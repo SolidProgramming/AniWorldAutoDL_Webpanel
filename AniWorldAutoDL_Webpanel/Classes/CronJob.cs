@@ -27,6 +27,8 @@ namespace AniWorldAutoDL_Webpanel.Classes
         public static int Interval;
         public static DateTime? NextRun = default;
 
+        private static bool CaptchaResolveNotificationSent { get; set; } = false;
+
         private IBrowser? Browser;
 
         public static int DownloadCount { get; set; }
@@ -143,8 +145,10 @@ namespace AniWorldAutoDL_Webpanel.Classes
                 logMessage = $"{sto.Host} {ErrorMessage.HosterUnavailable}";
                 CronJobErrorEvent?.Invoke(MessageType.Error, logMessage);
 
-                if (downloaderPreferences is not null && downloaderPreferences.TelegramCaptchaNotification)
+                if (downloaderPreferences is not null && downloaderPreferences.TelegramCaptchaNotification && !CaptchaResolveNotificationSent)
+                {
                     await apiService.SendCaptchaNotification(sto);
+                }
             }
 
             if (!hosterReachableAniworld)
@@ -152,16 +156,25 @@ namespace AniWorldAutoDL_Webpanel.Classes
                 logMessage = $"{aniworld.Host} {ErrorMessage.HosterUnavailable}";
                 CronJobErrorEvent?.Invoke(MessageType.Error, logMessage);
 
-                if (downloaderPreferences is not null && downloaderPreferences.TelegramCaptchaNotification)
+                if (downloaderPreferences is not null && downloaderPreferences.TelegramCaptchaNotification && !CaptchaResolveNotificationSent)
+                {
                     await apiService.SendCaptchaNotification(aniworld);
+                }                    
             }
 
             if (!hosterReachableSTO || !hosterReachableAniworld)
             {
                 SetCronJobDownloads(0, 0);
                 SetCronJobState(CronJobState.WaitForNextCycle);
+
+                if (downloaderPreferences is not null && downloaderPreferences.TelegramCaptchaNotification)
+                    CaptchaResolveNotificationSent = true;                
+
                 return;
             }
+
+            //Reset notification sent because it got resolved or fixed itself
+            CaptchaResolveNotificationSent = false;
 
             SkippedDownloads.Clear();
 
