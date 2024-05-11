@@ -215,11 +215,11 @@ namespace AniWorldAutoDL_Webpanel.Classes
 
                 string url = "";
 
-                if (episodeDownload.StreamingPortal.Name == "S.TO")
+                if (episodeDownload.StreamingPortal.Name == Hoster.STO.ToString())
                 {
                     url = $"https://s.to/serie/stream{episodeDownload.Download.Path}/{string.Format(Globals.LinkBlueprint, episodeDownload.Download.Season, episodeDownload.Download.Episode)}";
                 }
-                else if (episodeDownload.StreamingPortal.Name == "AniWorld")
+                else if (episodeDownload.StreamingPortal.Name == Hoster.AniWorld.ToString())
                 {
                     url = $"https://aniworld.to/anime/stream{episodeDownload.Download.Path}/{string.Format(Globals.LinkBlueprint, episodeDownload.Download.Season, episodeDownload.Download.Episode)}";
                 }
@@ -270,11 +270,11 @@ namespace AniWorldAutoDL_Webpanel.Classes
                 {
                     SetCronJobDownloads(DownloadQue.Count, downloadLanguages.Count() - finishedDownloadsCount);
 
-                    if (episodeDownload.StreamingPortal.Name == "S.TO")
+                    if (episodeDownload.StreamingPortal.Name == Hoster.STO.ToString())
                     {
                         url = $"https://s.to{languageRedirectLinks[language][0]}";
                     }
-                    else if (episodeDownload.StreamingPortal.Name == "AniWorld")
+                    else if (episodeDownload.StreamingPortal.Name == Hoster.AniWorld.ToString())
                     {
                         url = $"https://aniworld.to{languageRedirectLinks[language][0]}";
                     }
