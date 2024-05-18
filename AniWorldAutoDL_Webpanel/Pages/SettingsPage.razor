@@ -7,9 +7,15 @@
 <PageTitle>Einstellungen</PageTitle>
 
 <div class="container">
+    <div class="row px-3 mt-2 py-2">
+        <div class="col-6">
+            <h5>Download Pfad:</h5>
+            <HxInputText @bind-Value="DownloadPath" Placeholder="C:\\Downloads"></HxInputText>
+        </div>
+    </div>
     <EditForm Model="@DownloaderPreferences" OnValidSubmit="@(() => SavePreferences())">
         <DataAnnotationsValidator />
-        <div class="row">
+        <div class="row mt-3">
             <div class="col-sm-auto">
                 <div class="px-3 py-2">
                     <div class="my-2">
@@ -44,27 +50,27 @@
                 <HxIcon CssClass="pe-1" Icon="@BootstrapIcon.ExclamationCircleFill" />
                 Coming Soon
             </HxAlert>
-                <div class="col-md-auto">
-                    <div class="px-3 py-2">
-                        <div class="my-2">
-                            <HxIcon CssClass="d-inline fs-5 text-primary" Icon="BootstrapIcon.Activity"></HxIcon>
-                            <h5 class="d-inline px-2">Proxy:</h5>
-                        </div>
-                        <HxCheckbox Enabled=false CssClass="mt-2" TextCssClass="d-inline text-warning" Inline="true" @bind-Value="DownloaderPreferences.UseProxy" Text="Proxy nutzen" />
+            <div class="col-md-auto">
+                <div class="px-3 py-2">
+                    <div class="my-2">
+                        <HxIcon CssClass="d-inline fs-5 text-primary" Icon="BootstrapIcon.Activity"></HxIcon>
+                        <h5 class="d-inline px-2">Proxy:</h5>
                     </div>
+                    <HxCheckbox Enabled=false CssClass="mt-2" TextCssClass="d-inline text-warning" Inline="true" @bind-Value="DownloaderPreferences.UseProxy" Text="Proxy nutzen" />
                 </div>
-                <div class="col mt-3">
-                    <label class="text-warning my-2">Proxy Adresse:</label>
+            </div>
+            <div class="col mt-3">
+                <label class="text-warning my-2">Proxy Adresse:</label>
                 <HxInputText Enabled=false Placeholder="p.webshare.io" InputSize="InputSize.Small" @bind-Value="DownloaderPreferences.ProxyUri" />
-                </div>
-                <div class="col mt-3">
-                    <label class="text-warning my-2">Benutzername:</label>
+            </div>
+            <div class="col mt-3">
+                <label class="text-warning my-2">Benutzername:</label>
                 <HxInputText Enabled=false InputSize="InputSize.Small" @bind-Value="DownloaderPreferences.ProxyUsername" />
-                </div>
-                <div class="col mt-3">
-                    <label class="text-warning my-2">Passwort:</label>
+            </div>
+            <div class="col mt-3">
+                <label class="text-warning my-2">Passwort:</label>
                 <HxInputText Enabled=false Type="InputType.Password" InputSize="InputSize.Small" @bind-Value="DownloaderPreferences.ProxyPassword" />
-                </div>         
+            </div>
         </div>
         <div class="row mt-4">
             <div class="col-6">
@@ -78,6 +84,7 @@
 </div>
 
 @code {
+    private string? DownloadPath { get; set; }
     private DownloaderPreferencesModel? DownloaderPreferences = new();
 
     protected override async void OnAfterRender(bool firstRender)
@@ -93,6 +100,16 @@
                 return;
             }
 
+            SettingsModel? settings = SettingsHelper.ReadSettings<SettingsModel>();
+
+            if (settings is null || string.IsNullOrEmpty(settings.DownloadPath))
+            {
+                ToastService.AddMessage(ErrorMessage.RetrieveDownloaderPreferencesFail, MessageType.Error);
+                return;
+            }
+
+            DownloadPath = settings.DownloadPath;
+
             StateHasChanged();
         }
     }
@@ -106,6 +123,12 @@
             ToastService.AddMessage(ErrorMessage.DownloaderPreferencesSaveFail, MessageType.Error);
             return;
         }
+
+        SettingsModel? settings = SettingsHelper.ReadSettings<SettingsModel>();
+
+        settings.DownloadPath = DownloadPath;
+
+        SettingsHelper.SaveSettings(settings);
 
         ToastService.AddMessage(InfoMessage.DownloaderPreferencesSaved, MessageType.Success);
 

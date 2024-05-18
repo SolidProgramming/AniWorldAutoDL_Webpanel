@@ -1,11 +1,14 @@
 ﻿using Newtonsoft.Json;
 using System.Reflection;
+using System.Xml.Serialization;
+using System.Xml;
+using System.IO;
 
 namespace AniWorldAutoDL_Webpanel.Misc
 {
     internal static class SettingsHelper
     {
-        internal static T? ReadSettings<T>()
+        private static string? GetSaveFilePath()
         {
             string path;
             if (Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER") == "true")
@@ -16,13 +19,20 @@ namespace AniWorldAutoDL_Webpanel.Misc
                 {
                     Directory.CreateDirectory(Path.GetDirectoryName(path));
                 };
+
+                return path;
             }
             else
             {
-                path = "settings.json";
+               return "settings.json";
             }
+        }
 
-            if (!File.Exists(path))
+        internal static T? ReadSettings<T>()
+        {
+           string? path = GetSaveFilePath();
+
+            if (!File.Exists(path) || string.IsNullOrEmpty(path))
                 return default;
 
             using StreamReader r = new(path);
@@ -45,6 +55,18 @@ namespace AniWorldAutoDL_Webpanel.Misc
             return (T?)settings?.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance)
                 .First(_ => _.PropertyType == typeof(T))
                 .GetValue(settings, null);
+        }
+
+        public static void SaveSettings(SettingsModel settings)
+        {
+            string? path = GetSaveFilePath();
+
+            if (!File.Exists(path) || string.IsNullOrEmpty(path))
+                return;
+
+            string json = JsonConvert.SerializeObject(settings);
+
+            File.WriteAllText(path, json);
         }
     }
 }
