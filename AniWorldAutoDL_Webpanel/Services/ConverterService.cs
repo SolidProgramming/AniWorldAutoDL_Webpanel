@@ -70,10 +70,13 @@ namespace AniWorldAutoDL_Webpanel.Services
 
             string filePath = GetFileName(download, downloadPath);
 
-            TimeSpan streamDuration = await GetStreamDuration(streamUrl);
+            TimeSpan streamDuration = await GetStreamDuration(streamUrl, downloaderPreferences);
 
             if (streamDuration == TimeSpan.Zero)
+            {
+                logger.LogError($"{DateTime.Now} | Keine Streamduration!");
                 return default;
+            }               
 
             download.StreamDuration = streamDuration;
 
@@ -94,7 +97,9 @@ namespace AniWorldAutoDL_Webpanel.Services
 
             ConverterStateChanged?.Invoke(ConverterState.Downloading, download);
 
-            string args = $"-y -i \"{streamUrl}\" -acodec copy -vcodec copy -sn \"{filePath}\" -f matroska";
+            string proxyUri = downloaderPreferences.ProxyUri.Replace("http://", "").Replace("https://", "");
+            string proxyAuthArgs = $"-http_proxy http://{downloaderPreferences.ProxyUsername}:{downloaderPreferences.ProxyPassword}@{proxyUri}";
+            string args = $"-y {(downloaderPreferences.UseProxy ? proxyAuthArgs : "")} -i \"{streamUrl}\" -acodec copy -vcodec copy -sn \"{filePath}\" -f matroska";
 
             string binPath = Helper.GetFFMPEGPath();
 
@@ -129,7 +134,7 @@ namespace AniWorldAutoDL_Webpanel.Services
             }
             catch (Exception ex)
             {
-                logger.LogWarning($"{DateTime.Now} | {ex}");
+                logger.LogWarning($"{DateTime.Now} |FFMPEG: {ex}");
             }
             finally
             {
@@ -254,11 +259,14 @@ namespace AniWorldAutoDL_Webpanel.Services
             return remainingTimeSpan;
         }
 
-        private static async Task<TimeSpan> GetStreamDuration(string streamUrl)
+        private static async Task<TimeSpan> GetStreamDuration(string streamUrl, DownloaderPreferencesModel downloaderPreferences)
         {
             StringBuilder stdOutBuffer = new();
 
-            string args = $"-v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 -sexagesimal \"{streamUrl}\"";
+            string proxyUri = downloaderPreferences.ProxyUri.Replace("http://", "").Replace("https://", "");
+            string proxyAuthArgs = $"-http_proxy http://{downloaderPreferences.ProxyUsername}:{downloaderPreferences.ProxyPassword}@{proxyUri}";
+
+            string args = $"{(downloaderPreferences.UseProxy ? proxyAuthArgs : "")} -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 -sexagesimal \"{streamUrl}\"";
 
             string? binPath = Helper.GetFFProbePath();
 
@@ -279,7 +287,7 @@ namespace AniWorldAutoDL_Webpanel.Services
             }
             catch (Exception ex)
             {
-                Console.Out.WriteLine($"{DateTime.Now} | {ex}");
+                Console.Out.WriteLine($"{DateTime.Now} |FFPROBE: {ex}");
                 return TimeSpan.Zero;
             }
 

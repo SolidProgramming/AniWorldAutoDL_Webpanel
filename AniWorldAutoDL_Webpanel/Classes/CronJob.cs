@@ -120,10 +120,10 @@ namespace AniWorldAutoDL_Webpanel.Classes
 
             DownloaderPreferencesModel? downloaderPreferences = await apiService.GetAsync<DownloaderPreferencesModel?>("getDownloaderPreferences");
 
-            HosterModel? sto = HosterHelper.GetHosterByEnum(Hoster.STO);
-            HosterModel? aniworld = HosterHelper.GetHosterByEnum(Hoster.AniWorld);
+            //HosterModel? sto = HosterHelper.GetHosterByEnum(Hoster.STO);
+            //HosterModel? aniworld = HosterHelper.GetHosterByEnum(Hoster.AniWorld);
 
-            WebProxy? proxy = default;
+            //WebProxy? proxy = default;
 
             //if (downloaderPreferences is not null && downloaderPreferences.UseProxy)
             //{
@@ -135,43 +135,43 @@ namespace AniWorldAutoDL_Webpanel.Classes
             //    });
             //}
 
-            bool hosterReachableSTO = await HosterHelper.HosterReachable(sto, proxy);
-            bool hosterReachableAniworld = await HosterHelper.HosterReachable(aniworld, proxy);
+            //bool hosterReachableSTO = await HosterHelper.HosterReachable(sto, proxy);
+            //bool hosterReachableAniworld = await HosterHelper.HosterReachable(aniworld, proxy);
 
             string? logMessage;
 
-            if (!hosterReachableSTO)
-            {
-                logMessage = $"{sto.Host} {ErrorMessage.HosterUnavailable}";
-                CronJobErrorEvent?.Invoke(MessageType.Error, logMessage);
+            //if (!hosterReachableSTO)
+            //{
+            //    logMessage = $"{sto.Host} {ErrorMessage.HosterUnavailable}";
+            //    CronJobErrorEvent?.Invoke(MessageType.Error, logMessage);
 
-                if (downloaderPreferences is not null && downloaderPreferences.TelegramCaptchaNotification && !CaptchaResolveNotificationSent)
-                {
-                    await apiService.SendCaptchaNotification(sto);
-                }
-            }
+            //    if (downloaderPreferences is not null && downloaderPreferences.TelegramCaptchaNotification && !CaptchaResolveNotificationSent)
+            //    {
+            //        await apiService.SendCaptchaNotification(sto);
+            //    }
+            //}
 
-            if (!hosterReachableAniworld)
-            {
-                logMessage = $"{aniworld.Host} {ErrorMessage.HosterUnavailable}";
-                CronJobErrorEvent?.Invoke(MessageType.Error, logMessage);
+            //if (!hosterReachableAniworld)
+            //{
+            //    logMessage = $"{aniworld.Host} {ErrorMessage.HosterUnavailable}";
+            //    CronJobErrorEvent?.Invoke(MessageType.Error, logMessage);
 
-                if (downloaderPreferences is not null && downloaderPreferences.TelegramCaptchaNotification && !CaptchaResolveNotificationSent)
-                {
-                    await apiService.SendCaptchaNotification(aniworld);
-                }                    
-            }
+            //    if (downloaderPreferences is not null && downloaderPreferences.TelegramCaptchaNotification && !CaptchaResolveNotificationSent)
+            //    {
+            //        await apiService.SendCaptchaNotification(aniworld);
+            //    }                    
+            //}
 
-            if (!hosterReachableSTO || !hosterReachableAniworld)
-            {
-                SetCronJobDownloads(0, 0);
-                SetCronJobState(CronJobState.WaitForNextCycle);
+            //if (!hosterReachableSTO || !hosterReachableAniworld)
+            //{
+            //    SetCronJobDownloads(0, 0);
+            //    SetCronJobState(CronJobState.WaitForNextCycle);
 
-                if (downloaderPreferences is not null && downloaderPreferences.TelegramCaptchaNotification)
-                    CaptchaResolveNotificationSent = true;                
+            //    if (downloaderPreferences is not null && downloaderPreferences.TelegramCaptchaNotification)
+            //        CaptchaResolveNotificationSent = true;                
 
-                return;
-            }
+            //    return;
+            //}
 
             //Reset notification sent because it got resolved or fixed itself
             CaptchaResolveNotificationSent = false;
@@ -285,6 +285,8 @@ namespace AniWorldAutoDL_Webpanel.Classes
                     if (string.IsNullOrEmpty(m3u8Url))
                         continue;
 
+                    await Console.Out.WriteLineAsync($"Found m3u8: {m3u8Url}");
+
                     episodeDownload.Download.Name = $"{originalEpisodeName.GetValidFileName()}[{language}]";
 
                     CommandResultExt? result = await converterService.StartDownload(m3u8Url, episodeDownload.Download, settings.DownloadPath, downloaderPreferences);
@@ -375,26 +377,28 @@ namespace AniWorldAutoDL_Webpanel.Classes
         {
             Browser ??= await Puppeteer.LaunchAsync(new LaunchOptions
             {
-                Headless = true,                
+                Headless = true,
+                Args = [(downloaderPreferences.UseProxy ? $"--proxy-server={downloaderPreferences.ProxyUri}" : "")]
             });
 
             using IPage? page = await Browser.NewPageAsync();
 
-            //if (downloaderPreferences.UseProxy)
-            //{
-            //    await page.AuthenticateAsync(new Credentials { 
-            //        Username = downloaderPreferences.ProxyUsername, 
-            //        Password = downloaderPreferences.ProxyPassword
-            //    });
-            //}
+            if (downloaderPreferences.UseProxy)
+            {
+                await page.AuthenticateAsync(new Credentials
+                {
+                    Username = downloaderPreferences.ProxyUsername,
+                    Password = downloaderPreferences.ProxyPassword
+                });
+            }
 
             try
             {
                 await page.GoToAsync(streamUrl);
-                await page.WaitForSelectorAsync("button.plyr__control.plyr__control--overlaid", new WaitForSelectorOptions { Timeout = 4000 });
+                await page.WaitForSelectorAsync("button.plyr__control.plyr__control--overlaid", new WaitForSelectorOptions { Timeout = 14000 });
                 await page.ClickAsync("button.plyr__control.plyr__control--overlaid");
                 await page.BringToFrontAsync();
-                await page.WaitForSelectorAsync("button.plyr__control.plyr__control--overlaid", new WaitForSelectorOptions() { Timeout = 4000 });
+                await page.WaitForSelectorAsync("button.plyr__control.plyr__control--overlaid", new WaitForSelectorOptions() { Timeout = 14000 });
 
                 string html = await page.GetContentAsync();
 

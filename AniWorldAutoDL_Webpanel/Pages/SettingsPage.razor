@@ -45,31 +45,34 @@
                 </div>
             </div>
         </div>
-        <div class="row p-2 pb-2 border rounded-4 border-secondary">
-            <HxAlert Color="ThemeColor.Secondary" CssClass="mt-1">
-                <HxIcon CssClass="pe-1" Icon="@BootstrapIcon.ExclamationCircleFill" />
-                Coming Soon
-            </HxAlert>
+        <div class="row p-2 pb-2">
+            @if (ProxySettingsChanged)
+            {
+                <HxAlert Color="ThemeColor.Info" CssClass="mt-1">
+                    <HxIcon CssClass="pe-1" Icon="@BootstrapIcon.ExclamationCircleFill" />
+                    Damit die Proxy Einstellungen wirksam werden, bitte die Einstellungen speichern und den Server neustarten!
+                </HxAlert>
+            }            
             <div class="col-md-auto">
                 <div class="px-3 py-2">
                     <div class="my-2">
                         <HxIcon CssClass="d-inline fs-5 text-primary" Icon="BootstrapIcon.Activity"></HxIcon>
                         <h5 class="d-inline px-2">Proxy:</h5>
                     </div>
-                    <HxCheckbox Enabled=false CssClass="mt-2" TextCssClass="d-inline text-warning" Inline="true" @bind-Value="DownloaderPreferences.UseProxy" Text="Proxy nutzen" />
+                    <HxCheckbox CssClass="mt-2" TextCssClass="d-inline text-warning" Inline="true" @oninput="OnProxySettingsChanged" @bind-Value="DownloaderPreferences.UseProxy" Text="Proxy nutzen" />
                 </div>
             </div>
             <div class="col mt-3">
                 <label class="text-warning my-2">Proxy Adresse:</label>
-                <HxInputText Enabled=false Placeholder="p.webshare.io" InputSize="InputSize.Small" @bind-Value="DownloaderPreferences.ProxyUri" />
+                <HxInputText Enabled=DownloaderPreferences.UseProxy Placeholder="p.webshare.io" @oninput="OnProxySettingsChanged" InputSize="InputSize.Small" @bind-Value="DownloaderPreferences.ProxyUri" />
             </div>
             <div class="col mt-3">
                 <label class="text-warning my-2">Benutzername:</label>
-                <HxInputText Enabled=false InputSize="InputSize.Small" @bind-Value="DownloaderPreferences.ProxyUsername" />
+                <HxInputText Enabled=DownloaderPreferences.UseProxy InputSize="InputSize.Small" @oninput="OnProxySettingsChanged" @bind-Value="DownloaderPreferences.ProxyUsername" />
             </div>
             <div class="col mt-3">
                 <label class="text-warning my-2">Passwort:</label>
-                <HxInputText Enabled=false Type="InputType.Password" InputSize="InputSize.Small" @bind-Value="DownloaderPreferences.ProxyPassword" />
+                <HxInputText Enabled=DownloaderPreferences.UseProxy Type="InputType.Password" @oninput="OnProxySettingsChanged" InputSize="InputSize.Small" @bind-Value="DownloaderPreferences.ProxyPassword" />
             </div>
         </div>
         <div class="row mt-4">
@@ -84,6 +87,7 @@
 </div>
 
 @code {
+    private bool ProxySettingsChanged { get; set; }
     private string? DownloadPath { get; set; }
     private DownloaderPreferencesModel? DownloaderPreferences = new();
 
@@ -135,6 +139,11 @@
         await Task.Delay(1000);
 
         NavigateBack();
+    }
+
+    private void OnProxySettingsChanged()
+    {       
+        ProxySettingsChanged = true;
     }
 
     private void NavigateBack()

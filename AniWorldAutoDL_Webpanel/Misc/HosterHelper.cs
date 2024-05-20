@@ -26,7 +26,7 @@ namespace AniWorldAutoDL_Webpanel.Misc
                     httpClient = HttpClientFactory.CreateHttpClient(proxy);
                 }
 
-                httpClient.Timeout = TimeSpan.FromSeconds(5);
+                httpClient.Timeout = TimeSpan.FromSeconds(10);
 
                 HttpResponseMessage responseMessage = await httpClient.GetAsync(hoster.BrowserUrl);
 

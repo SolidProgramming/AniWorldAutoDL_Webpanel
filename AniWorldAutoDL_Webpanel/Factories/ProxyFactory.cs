@@ -8,11 +8,11 @@ namespace AniWorldAutoDL_Webpanel.Factories
         {
             if (string.IsNullOrEmpty(proxyAccount.Uri))
                 return null;
-
+                       
             return new WebProxy()
             {
                 Address = new Uri(proxyAccount.Uri),
-                BypassProxyOnLocal = false,
+                BypassProxyOnLocal = true,
                 UseDefaultCredentials = false,
                 Credentials = new NetworkCredential(proxyAccount.Username, proxyAccount.Password)
             };
