@@ -15,7 +15,7 @@ using System.Net.Sockets;
 
 SettingsModel? settings = SettingsHelper.ReadSettings<SettingsModel>();
 
-if (settings is null || string.IsNullOrEmpty(settings.ApiUrl) || string.IsNullOrEmpty(settings.DownloadPath))
+if (settings is null || string.IsNullOrEmpty(settings.ApiUrl))
 {
     Console.WriteLine("Settings.json Datei nicht gefunden oder nicht vollständig!\nProgramm wird beendet.");
     Console.ReadKey();

@@ -27,8 +27,6 @@ namespace AniWorldAutoDL_Webpanel.Classes
         public static int Interval;
         public static DateTime? NextRun = default;
 
-        private static bool CaptchaResolveNotificationSent { get; set; } = false;
-
         private IBrowser? Browser;
 
         public static int DownloadCount { get; set; }
@@ -120,62 +118,8 @@ namespace AniWorldAutoDL_Webpanel.Classes
 
             DownloaderPreferencesModel? downloaderPreferences = await apiService.GetAsync<DownloaderPreferencesModel?>("getDownloaderPreferences");
 
-            //HosterModel? sto = HosterHelper.GetHosterByEnum(Hoster.STO);
-            //HosterModel? aniworld = HosterHelper.GetHosterByEnum(Hoster.AniWorld);
-
-            //WebProxy? proxy = default;
-
-            //if (downloaderPreferences is not null && downloaderPreferences.UseProxy)
-            //{
-            //    proxy = ProxyFactory.CreateProxy(new ProxyAccountModel()
-            //    {
-            //        Uri = downloaderPreferences.ProxyUri,
-            //        Username = downloaderPreferences.ProxyUsername,
-            //        Password = downloaderPreferences.ProxyPassword
-            //    });
-            //}
-
-            //bool hosterReachableSTO = await HosterHelper.HosterReachable(sto, proxy);
-            //bool hosterReachableAniworld = await HosterHelper.HosterReachable(aniworld, proxy);
-
             string? logMessage;
-
-            //if (!hosterReachableSTO)
-            //{
-            //    logMessage = $"{sto.Host} {ErrorMessage.HosterUnavailable}";
-            //    CronJobErrorEvent?.Invoke(MessageType.Error, logMessage);
-
-            //    if (downloaderPreferences is not null && downloaderPreferences.TelegramCaptchaNotification && !CaptchaResolveNotificationSent)
-            //    {
-            //        await apiService.SendCaptchaNotification(sto);
-            //    }
-            //}
-
-            //if (!hosterReachableAniworld)
-            //{
-            //    logMessage = $"{aniworld.Host} {ErrorMessage.HosterUnavailable}";
-            //    CronJobErrorEvent?.Invoke(MessageType.Error, logMessage);
-
-            //    if (downloaderPreferences is not null && downloaderPreferences.TelegramCaptchaNotification && !CaptchaResolveNotificationSent)
-            //    {
-            //        await apiService.SendCaptchaNotification(aniworld);
-            //    }                    
-            //}
-
-            //if (!hosterReachableSTO || !hosterReachableAniworld)
-            //{
-            //    SetCronJobDownloads(0, 0);
-            //    SetCronJobState(CronJobState.WaitForNextCycle);
-
-            //    if (downloaderPreferences is not null && downloaderPreferences.TelegramCaptchaNotification)
-            //        CaptchaResolveNotificationSent = true;                
-
-            //    return;
-            //}
-
-            //Reset notification sent because it got resolved or fixed itself
-            CaptchaResolveNotificationSent = false;
-
+            
             SkippedDownloads.Clear();
 
             IEnumerable<EpisodeDownloadModel>? downloads = await apiService.GetAsync<IEnumerable<EpisodeDownloadModel>?>("getDownloads");
@@ -260,7 +204,7 @@ namespace AniWorldAutoDL_Webpanel.Classes
                 episodeDownload.Download.Name = episodeDownload.Download.Name.GetValidFileName();
 
                 IEnumerable<Language> episodeLanguages = episodeDownload.Download.LanguageFlag.GetFlags<Language>(ignore: Language.None);
-                IEnumerable<Language> redirectLanguages = languageRedirectLinks.Keys.Where(_ => episodeLanguages.Contains(_));
+                IEnumerable<Language> redirectLanguages = languageRedirectLinks.Keys.Where(lang => episodeLanguages.Contains(lang));
 
                 IEnumerable<Language>? downloadLanguages = episodeLanguages.Intersect(redirectLanguages);
 

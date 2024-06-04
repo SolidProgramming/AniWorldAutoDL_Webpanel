@@ -18,6 +18,29 @@
 
 <UpdateComponent></UpdateComponent>
 <div class="container mt-4">
+    <HxModal ShowCloseButton="false" CloseOnEscape="false" Size="ModalSize.Large" @ref="DownloadPathModal" Centered="true">
+        <BodyTemplate>
+            <div class="container">
+                <HxAlert Color="ThemeColor.Info" CssClass="mt-1">
+                    <HxIcon CssClass="pe-1" Icon="@BootstrapIcon.ExclamationCircleFill" />
+                    Du hast noch keinen Download Pfad angegeben! <br /><span class="ps-4">Bitte trage hier den Pfad ein wo die Dateien gespeichert werden sollen.</span>
+                </HxAlert>
+                @if (ShowDownloadPathError)
+                {
+                    <HxAlert Color="ThemeColor.Danger" CssClass="mt-1">
+                        <HxIcon CssClass="pe-1" Icon="@BootstrapIcon.ExclamationCircleFill" />
+                        Du musst einen Download Pfad angeben!
+                    </HxAlert>
+                }
+                <div class="mt-4">
+                    <HxInputText @bind-Value="Settings.DownloadPath" Placeholder="C:\\Downloads"></HxInputText>
+                </div>
+                <div class="mt-4">
+                    <HxButton OnClick="SaveDownloadPath" Color="ThemeColor.Success" Icon="BootstrapIcon.Check" CssClass="w-100">Speichern</HxButton>
+                </div>
+            </div>
+        </BodyTemplate>
+    </HxModal>
     <div style="overflow-y: auto;">
         <table class="table">
             <thead>
@@ -165,9 +188,9 @@
                 </div>
             </div>
             @* <div class="col">
-                <label class="text-warning me-2">Stoppe nach X Downloads</label>
-                <HxInputNumber CssClass="d-inline-flex " InputSize="InputSize.Small" Decimals="0" TValue="int" @bind-Value="StopAfterDownloadCount" />
-                <HxButton Size="ButtonSize.Small" CssClass="w-100 mt-2" Color="ThemeColor.Success">Speichern</HxButton>
+            <label class="text-warning me-2">Stoppe nach X Downloads</label>
+            <HxInputNumber CssClass="d-inline-flex " InputSize="InputSize.Small" Decimals="0" TValue="int" @bind-Value="StopAfterDownloadCount" />
+            <HxButton Size="ButtonSize.Small" CssClass="w-100 mt-2" Color="ThemeColor.Success">Speichern</HxButton>
             </div> *@
             <div class="col d-flex justify-content-end">
                 @if (NextCronJobCycle is not null)
@@ -199,6 +222,8 @@
 
 
 @code {
+    private HxModal? DownloadPathModal;
+
     private ConvertProgressModel? ConvertProgress;
     private DownloadModel? Download;
     private ConverterState ConverterState = ConverterState.Idle;
@@ -225,10 +250,21 @@
 
     private TimeSpan SmoothedETA { get; set; }
 
+    private SettingsModel? Settings;
+    private bool ShowDownloadPathError { get; set; }
+
     protected override async void OnAfterRender(bool firstRender)
     {
         if (firstRender)
         {
+            Settings = SettingsHelper.ReadSettings<SettingsModel>();
+
+            if (Settings is not null && string.IsNullOrEmpty(Settings.DownloadPath))
+            {
+                await DownloadPathModal.ShowAsync();
+                return;
+            }
+
             CronJob.RemoveHandlers();
 
             ConverterState = ConverterService.GetConverterState();
@@ -323,7 +359,7 @@
             SmoothedETA = ConvertProgress.ETA;
         }
 
-        InvokeAsync(() => StateHasChanged());        
+        InvokeAsync(() => StateHasChanged());
     }
 
     private void CronJobDownloads(int downloadCount, int languageDownloadCount)
@@ -476,5 +512,20 @@
         }
 
         return $"{speedFormatted} {unit}";
+    }
+
+    private async void SaveDownloadPath()
+    {
+        if (string.IsNullOrEmpty(Settings.DownloadPath))
+        {
+            ShowDownloadPathError = true;
+            return;
+        }
+
+        ShowDownloadPathError = false;
+
+        SettingsHelper.SaveSettings(Settings);
+
+        await DownloadPathModal.HideAsync();
     }
 }
