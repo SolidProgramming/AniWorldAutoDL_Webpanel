@@ -339,10 +339,10 @@ namespace AniWorldAutoDL_Webpanel.Classes
             try
             {
                 await page.GoToAsync(streamUrl);
-                await page.WaitForSelectorAsync("button.plyr__control.plyr__control--overlaid", new WaitForSelectorOptions { Timeout = 14000 });
+                await page.WaitForSelectorAsync("button.plyr__control.plyr__control--overlaid", new WaitForSelectorOptions { Timeout = 10000 });
                 await page.ClickAsync("button.plyr__control.plyr__control--overlaid");
                 await page.BringToFrontAsync();
-                await page.WaitForSelectorAsync("button.plyr__control.plyr__control--overlaid", new WaitForSelectorOptions() { Timeout = 14000 });
+                await page.WaitForSelectorAsync("button.plyr__control.plyr__control--overlaid", new WaitForSelectorOptions() { Timeout = 10000 });
 
                 string html = await page.GetContentAsync();
 
