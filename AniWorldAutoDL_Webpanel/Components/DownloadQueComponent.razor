@@ -14,6 +14,7 @@
                     <th scope="col" class="text-center"></th>
                     <th scope="col"></th>
                     <th scope="col"></th>
+                    <th scope="col"></th>
                 </tr>
             </thead>
             <tbody>
@@ -55,11 +56,14 @@
                                 <LanguageFlagComponent Languages="@download.Download.LanguageFlag"></LanguageFlagComponent>
                             </td>
                             <td class="text-center align-middle" width="50">
+                                <HxButton OnClick="@(() => ToggleStopMark(download))" Color="@(download.HasStopMark ? ThemeColor.Info : ThemeColor.Secondary)" Icon="@(download.HasStopMark ? BootstrapIcon.FlagFill : BootstrapIcon.Flag)"></HxButton>
+                            </td>
+                            <td class="text-center align-middle" width="50">
                                 <HxButton OnClick="@(() => SkipDownload(download))" Color="ThemeColor.Secondary" Icon="BootstrapIcon.SkipForwardFill"></HxButton>
                             </td>
                             <td class="text-center align-middle" width="50">
                                 <HxButton OnClick="@(() => RemoveDownloadFromQueue(download))" Color="ThemeColor.Danger" Icon="BootstrapIcon.XLg"></HxButton>
-                            </td>
+                            </td>                            
                         </tr>
                         i++;
                     }
@@ -203,6 +207,32 @@
         StateHasChanged();
 
         await OnDownloadSkippOrRemove.InvokeAsync(Downloads!.Count);
+    }
+
+    private void ToggleStopMark(EpisodeDownloadModel download)
+    {
+        if (!download.HasStopMark)
+        {
+            var bla = Downloads.Where(_ => _.HasStopMark);
+
+            foreach (EpisodeDownloadModel episodeDownload in bla)
+            {
+                episodeDownload.HasStopMark = false;
+            }
+        }        
+
+        download.HasStopMark = !download.HasStopMark;
+
+        if (download.HasStopMark)
+        {
+            CronJob.StopMarkDownload = download;            
+        }
+        else
+        {
+            CronJob.StopMarkDownload = default;
+        }      
+
+        StateHasChanged();
     }
 
     private void IncreaseVisibleQueueEntriesCount()

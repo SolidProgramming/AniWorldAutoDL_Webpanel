@@ -24,6 +24,8 @@ namespace AniWorldAutoDL_Webpanel.Classes
         public static Queue<EpisodeDownloadModel>? DownloadQue;
         public static List<EpisodeDownloadModel> SkippedDownloads = [];
 
+        public static EpisodeDownloadModel? StopMarkDownload;
+
         public static int Interval;
         public static DateTime? NextRun = default;
 
@@ -274,10 +276,18 @@ namespace AniWorldAutoDL_Webpanel.Classes
 
                         if (finishedDownloadsCount >= downloadLanguages.Count())
                             await RemoveDownload(episodeDownload);
-                    }
+                    }                    
+                }
+
+                if (StopMarkDownload == episodeDownload)
+                {
+                    StopMarkDownload = default;
+                    CronJobErrorEvent?.Invoke(MessageType.Info, InfoMessage.StopMarkReached);
+                    break;
                 }
             }
 
+            DownloadQue = default;
             SetCronJobDownloads(0, 0);
             SetCronJobState(CronJobState.WaitForNextCycle);
         }

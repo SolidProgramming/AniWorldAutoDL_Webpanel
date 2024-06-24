@@ -130,7 +130,10 @@ if (downloaderPreferences is null)
 }
 else
 {
-    await quartz.CreateJob(downloaderPreferences.Interval);
+    if (downloaderPreferences.AutoStart)
+    {
+        await quartz.CreateJob(downloaderPreferences.Interval);
+    }    
 }
 
 

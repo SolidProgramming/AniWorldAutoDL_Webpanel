@@ -45,6 +45,7 @@
         <table class="table">
             <thead>
                 <tr>
+                    <th scope="col"></th>
                     <th scope="col" class="text-center" style="font-family: 'Roboto', sans-serif;">Status</th>
                     <th scope="col" class="text-center" style="font-family: 'Roboto', sans-serif;">Name</th>
                     <th scope="col" class="text-center" style="font-family: 'Roboto', sans-serif;">Staffel</th>
@@ -62,6 +63,14 @@
             </thead>
             <tbody>
                 <tr>
+                    <td class="text-center align-middle" width="50">
+                        @if (Download is not null)
+                        {
+                            bool hasStopMark = Download == CronJob.StopMarkDownload?.Download;
+
+                            <HxButton Enabled="false" Color="@(hasStopMark ? ThemeColor.Info : ThemeColor.Secondary)" Icon="@(hasStopMark ? BootstrapIcon.FlagFill : BootstrapIcon.Flag)"></HxButton>
+                        }
+                    </td>
                     <td class="text-center align-middle" width="50">
                         @switch (ConverterState)
                         {
@@ -212,7 +221,15 @@
                 }
                 else
                 {
-                    <HxIcon Icon="BootstrapIcon.Dash"></HxIcon>
+                    <h5 class="d-inline align-middle">
+                        <HxBadge Type="BadgeType.RoundedPill" Color="ThemeColor.Secondary">
+                            <HxIcon Icon="BootstrapIcon.Clock"></HxIcon>
+                            <HxIcon Icon="BootstrapIcon.Dash"></HxIcon>
+                        </HxBadge>
+                        <HxBadge CssClass="ms-2" Type="BadgeType.RoundedPill" Color="ThemeColor.Warning">
+                            Kein Autostart
+                        </HxBadge>
+                    </h5>
                 }
             </div>
         </div>
