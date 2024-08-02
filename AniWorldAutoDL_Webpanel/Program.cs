@@ -76,10 +76,24 @@ app.MapBlazorHub();
 app.MapFallbackToPage("/_Host");
 
 IConverterService converterService = app.Services.GetRequiredService<IConverterService>();
-converterService.Init();
+bool converterInitSuccess = converterService.Init();
+
+if (!converterInitSuccess)
+{
+    Console.Write("\nProgramm wird beendet.");
+    Console.ReadKey();
+    return;
+}
 
 IApiService apiService = app.Services.GetRequiredService<IApiService>();
-apiService.Init();
+bool apiInitSuccess = apiService.Init();
+
+if (!apiInitSuccess)
+{
+    Console.Write("\nProgramm wird beendet.");
+    Console.ReadKey();
+    return;
+}
 
 HosterModel? sto = HosterHelper.GetHosterByEnum(Hoster.STO);
 HosterModel? aniworld = HosterHelper.GetHosterByEnum(Hoster.AniWorld);
@@ -133,7 +147,7 @@ else
     if (downloaderPreferences.AutoStart)
     {
         await quartz.CreateJob(downloaderPreferences.Interval);
-    }    
+    }
 }
 
 

@@ -1,4 +1,5 @@
 ﻿using CliWrap;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -33,18 +34,20 @@ namespace AniWorldAutoDL_Webpanel.Services
                 Abort();
             });
 
-            if (!File.Exists(Helper.GetFFMPEGPath()))
+            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             {
-                logger.LogError($"{DateTime.Now} | {ErrorMessage.FFMPEGBinarieNotFound}");
-                return false;
-            }
+                if (!File.Exists(Helper.GetFFMPEGPath()))
+                {
+                    logger.LogError($"{DateTime.Now} | {ErrorMessage.FFMPEGBinarieNotFound}");
+                    return false;
+                }
 
-            if (!File.Exists(Helper.GetFFProbePath()))
-            {
-                logger.LogError($"{DateTime.Now} | {ErrorMessage.FFProbeBinariesNotFound}");
-                return false;
+                if (!File.Exists(Helper.GetFFProbePath()))
+                {
+                    logger.LogError($"{DateTime.Now} | {ErrorMessage.FFProbeBinariesNotFound}");
+                    return false;
+                }
             }
-
             ConverterStateChanged += ConverterService_ConverterStateChanged;
 
             IsInitialized = true;
@@ -97,9 +100,16 @@ namespace AniWorldAutoDL_Webpanel.Services
 
             ConverterStateChanged?.Invoke(ConverterState.Downloading, download);
 
-            string proxyUri = downloaderPreferences.ProxyUri.Replace("http://", "").Replace("https://", "");
-            string proxyAuthArgs = $"-http_proxy http://{downloaderPreferences.ProxyUsername}:{downloaderPreferences.ProxyPassword}@{proxyUri}";
-            string args = $"-y {(downloaderPreferences.UseProxy ? proxyAuthArgs : "")} -i \"{streamUrl}\" -acodec copy -vcodec copy -sn \"{filePath}\" -f matroska";
+            string args = "";
+            string proxyAuthArgs = "";
+
+            if (downloaderPreferences is not null && !string.IsNullOrEmpty(downloaderPreferences.ProxyUri))
+            {
+                string proxyUri = downloaderPreferences.ProxyUri.Replace("http://", "").Replace("https://", "");
+                proxyAuthArgs = $"-http_proxy http://{downloaderPreferences.ProxyUsername}:{downloaderPreferences.ProxyPassword}@{proxyUri}";
+            }
+
+            args = $"-y {( downloaderPreferences.UseProxy ? proxyAuthArgs : "" )} -i \"{streamUrl}\" -acodec copy -vcodec copy -sn \"{filePath}\" -f matroska";
 
             string binPath = Helper.GetFFMPEGPath();
 
@@ -263,10 +273,16 @@ namespace AniWorldAutoDL_Webpanel.Services
         {
             StringBuilder stdOutBuffer = new();
 
-            string proxyUri = downloaderPreferences.ProxyUri.Replace("http://", "").Replace("https://", "");
-            string proxyAuthArgs = $"-http_proxy http://{downloaderPreferences.ProxyUsername}:{downloaderPreferences.ProxyPassword}@{proxyUri}";
+            string args = "";
+            string proxyAuthArgs = "";
 
-            string args = $"{(downloaderPreferences.UseProxy ? proxyAuthArgs : "")} -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 -sexagesimal \"{streamUrl}\"";
+            if (downloaderPreferences is not null && !string.IsNullOrEmpty(downloaderPreferences.ProxyUri))
+            {
+                string proxyUri = downloaderPreferences.ProxyUri.Replace("http://", "").Replace("https://", "");
+                proxyAuthArgs = $"-http_proxy http://{downloaderPreferences.ProxyUsername}:{downloaderPreferences.ProxyPassword}@{proxyUri}";
+            }
+            
+            args = $"{( downloaderPreferences.UseProxy ? proxyAuthArgs : "" )} -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 -sexagesimal \"{streamUrl}\"";
 
             string? binPath = Helper.GetFFProbePath();
 
