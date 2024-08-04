@@ -5,9 +5,9 @@ VisualStudioVersion = 17.8.34525.116
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AniWorldAutoDL_Webpanel", "AniWorldAutoDL_Webpanel\AniWorldAutoDL_Webpanel.csproj", "{B33EB658-8413-45CB-A311-A73BD01AFE3F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Updater", "Updater\Updater.csproj", "{3B278504-8601-49E4-B831-6D40857033AE}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Updater", "Updater\Updater.csproj", "{3B278504-8601-49E4-B831-6D40857033AE}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Starter", "Starter\Starter.csproj", "{181EBF80-88BE-46B6-B419-A73A90ED7A49}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Starter", "Starter\Starter.csproj", "{181EBF80-88BE-46B6-B419-A73A90ED7A49}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

@@ -13,9 +13,9 @@
 @inject IHostApplicationLifetime AppLifetime
 @inject IUpdateService UpdateService
 @inject IQuartzService QuartzService
+@inject Toolbelt.Blazor.I18nText.I18nText I18nText
 
 <PageTitle>Dashboard</PageTitle>
-
 <UpdateComponent></UpdateComponent>
 <div class="container mt-4">
     <HxModal ShowCloseButton="false" CloseOnEscape="false" Size="ModalSize.Large" @ref="DownloadPathModal" Centered="true">
@@ -48,7 +48,7 @@
                     <th scope="col"></th>
                     <th scope="col" class="text-center" style="font-family: 'Roboto', sans-serif;">Status</th>
                     <th scope="col" class="text-center" style="font-family: 'Roboto', sans-serif;">Name</th>
-                    <th scope="col" class="text-center" style="font-family: 'Roboto', sans-serif;">Staffel</th>
+                    <th scope="col" class="text-center" style="font-family: 'Roboto', sans-serif;">@LangText["Season"]</th>
                     <th scope="col" class="text-center" style="font-family: 'Roboto', sans-serif;">Episode</th>
                     <th scope="col" class="text-center"></th>
                     <th scope="col" class="text-center" style="font-family: 'Roboto', sans-serif;">%</th>
@@ -227,7 +227,7 @@
                             <HxIcon Icon="BootstrapIcon.Dash"></HxIcon>
                         </HxBadge>
                         <HxBadge CssClass="ms-2" Type="BadgeType.RoundedPill" Color="ThemeColor.Warning">
-                            Kein Autostart
+                            @LangText["NoAutostart"]
                         </HxBadge>
                     </h5>
                 }
@@ -239,6 +239,8 @@
 
 
 @code {
+    private I18nText.Lang LangText = new();
+
     private HxModal? DownloadPathModal;
 
     private ConvertProgressModel? ConvertProgress;
@@ -269,6 +271,11 @@
 
     private SettingsModel? Settings;
     private bool ShowDownloadPathError { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        LangText = await I18nText.GetTextTableAsync<I18nText.Lang>(this);
+    }
 
     protected override async void OnAfterRender(bool firstRender)
     {
@@ -344,15 +351,15 @@
 
         if (TimeUntilCycle?.Hours > 0)
         {
-            TimeUntilCycleText = $"{TimeUntilCycle:hh} Stunden";
+            TimeUntilCycleText = $"{TimeUntilCycle:hh} {LangText["Hours"]}";
         }
 
         if (TimeUntilCycle?.Minutes > 0)
         {
-            TimeUntilCycleText += $" {TimeUntilCycle:mm} Minuten";
+            TimeUntilCycleText += $" {TimeUntilCycle:mm} {LangText["Minutes"]}";
         }
 
-        TimeUntilCycleText += $" {TimeUntilCycle:ss} Sekunden";
+        TimeUntilCycleText += $" {TimeUntilCycle:ss} {LangText["Seconds"]}";
 
         InvokeAsync(() => StateHasChanged());
     }

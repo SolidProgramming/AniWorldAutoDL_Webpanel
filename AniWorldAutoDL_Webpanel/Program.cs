@@ -12,6 +12,8 @@ using System.Runtime.InteropServices;
 using PuppeteerSharp;
 using System.Net;
 using System.Net.Sockets;
+using Toolbelt.Blazor.Extensions.DependencyInjection;
+using Toolbelt.Blazor.I18nText;
 
 SettingsModel? settings = SettingsHelper.ReadSettings<SettingsModel>();
 
@@ -31,7 +33,7 @@ if (AnotherInstanceExists())
 }
 
 await Console.Out.WriteLineAsync("Downloading Chrome");
-using var browserFetcher = new BrowserFetcher();
+BrowserFetcher? browserFetcher = new();
 await browserFetcher.DownloadAsync();
 
 WebApplicationBuilder? builder = WebApplication.CreateBuilder(args);
@@ -64,6 +66,11 @@ builder.Services.AddSingleton<IQuartzService, QuartzService>();
 
 builder.Services.AddHxServices();
 builder.Services.AddHxMessenger();
+
+builder.Services.AddI18nText(_ =>
+{
+    _.PersistenceLevel = PersistanceLevel.Cookie;
+});
 
 WebApplication? app = builder.Build();
 

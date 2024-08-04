@@ -1,6 +1,7 @@
 ﻿@inject IHxMessengerService ToastService
 @inject ILogger<DownloadQueComponent> DownloadQueComponentLogger
 @inject IApiService ApiService
+@inject Toolbelt.Blazor.I18nText.I18nText I18nText
 
 <div class="container mt-5">
     <div style="overflow-y: auto;">
@@ -9,7 +10,7 @@
                 <tr>
                     <th scope="col" class="text-center" style="font-family: 'Roboto', sans-serif;">#</th>
                     <th scope="col" class="text-center" style="font-family: 'Roboto', sans-serif;">Name</th>
-                    <th scope="col" class="text-center" style="font-family: 'Roboto', sans-serif;">Staffel</th>
+                    <th scope="col" class="text-center" style="font-family: 'Roboto', sans-serif;">@LangText["Season"]</th>
                     <th scope="col" class="text-center" style="font-family: 'Roboto', sans-serif;">Episode</th>
                     <th scope="col" class="text-center"></th>
                     <th scope="col"></th>
@@ -103,11 +104,18 @@
     [Parameter]
     public EventCallback<int> OnDownloadSkippOrRemove { get; set; }
 
+    private I18nText.Lang LangText = new();
+
     private string? TextClass { get; set; }
     private List<EpisodeDownloadModel>? Downloads;
     private CronJobState CronJobState = CronJobState.WaitForNextCycle;
 
     private int VisibleQueueEntriesCount { get; set; } = 8;
+
+    protected override async Task OnInitializedAsync()
+    {
+        LangText = await I18nText.GetTextTableAsync<I18nText.Lang>(this);
+    }
 
     protected override void OnAfterRender(bool firstRender)
     {
