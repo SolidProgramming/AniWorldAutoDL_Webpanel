@@ -18,6 +18,7 @@
 
   <ItemGroup>
     <Folder Include="Classes\" />
+    <Folder Include="wwwroot\" />
   </ItemGroup>
 
 </Project>
