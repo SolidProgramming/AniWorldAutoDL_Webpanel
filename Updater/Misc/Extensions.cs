@@ -42,7 +42,7 @@
                 return;
             }
 
-            Progress<long>? relativeProgress = new Progress<long>(totalBytes => progress.Report((float)totalBytes / contentLength.Value));
+            Progress<long>? relativeProgress = new(totalBytes => progress.Report((float)totalBytes / contentLength.Value));
 
             // Use extension method to report progress while downloading
             await download.CopyToAsync(destination, 81920, relativeProgress, cancellationToken);

@@ -23,12 +23,12 @@
 
   <ItemGroup>
     <PackageReference Include="CliWrap" Version="3.6.6" />
-    <PackageReference Include="Havit.Blazor.Components.Web.Bootstrap" Version="4.6.11" />
-    <PackageReference Include="HtmlAgilityPack" Version="1.11.62" />
+    <PackageReference Include="Havit.Blazor.Components.Web.Bootstrap" Version="4.6.12" />
+    <PackageReference Include="HtmlAgilityPack" Version="1.11.64" />
     <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.21.0" />
-    <PackageReference Include="PuppeteerSharp" Version="18.0.5" />
-    <PackageReference Include="Quartz" Version="3.12.0" />
-    <PackageReference Include="Quartz.Extensions.Hosting" Version="3.12.0" />
+    <PackageReference Include="PuppeteerSharp" Version="19.0.1" />
+    <PackageReference Include="Quartz" Version="3.13.0" />
+    <PackageReference Include="Quartz.Extensions.Hosting" Version="3.13.0" />
     <PackageReference Include="Telegram.Bot" Version="19.0.0" />
     <PackageReference Include="Toolbelt.Blazor.I18nText" Version="13.0.0" />
   </ItemGroup>
