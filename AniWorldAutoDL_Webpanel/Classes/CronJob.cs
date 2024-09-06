@@ -331,7 +331,7 @@ namespace AniWorldAutoDL_Webpanel.Classes
         {
             Browser ??= await Puppeteer.LaunchAsync(new LaunchOptions
             {
-                Headless = true,
+                Headless = false,
                 Args = [(downloaderPreferences.UseProxy ? $"--proxy-server={downloaderPreferences.ProxyUri}" : "")]
             });
 
@@ -348,11 +348,11 @@ namespace AniWorldAutoDL_Webpanel.Classes
 
             try
             {
-                await page.GoToAsync(streamUrl);
-                await page.WaitForSelectorAsync("button.plyr__control.plyr__control--overlaid", new WaitForSelectorOptions { Timeout = 10000 });
-                await page.ClickAsync("button.plyr__control.plyr__control--overlaid");
+                await page.GoToAsync(streamUrl);//body > div:nth-child(7) > div > media-player > media-controls.vds-controls.vds-play-section > media-controls-group > media-play-button
+                await page.WaitForSelectorAsync("media-play-button", new WaitForSelectorOptions { Timeout = 10000 });
+                await page.ClickAsync("media-play-button");
                 await page.BringToFrontAsync();
-                await page.WaitForSelectorAsync("button.plyr__control.plyr__control--overlaid", new WaitForSelectorOptions() { Timeout = 10000 });
+                await page.WaitForSelectorAsync("media-play-button", new WaitForSelectorOptions() { Timeout = 10000 });
 
                 string html = await page.GetContentAsync();
 
