@@ -1,4 +1,5 @@
 ﻿using HtmlAgilityPack;
+using Microsoft.AspNetCore.Mvc.RazorPages;
 using PuppeteerSharp;
 using Quartz;
 using System.Net;
@@ -347,13 +348,26 @@ namespace AniWorldAutoDL_Webpanel.Classes
             }
 
             try
-            {///html/body/div[1]/div/media-player/media-controls[1]/
-                await page.GoToAsync(streamUrl);//
-                await page.WaitForSelectorAsync("media-play-button>img", new WaitForSelectorOptions { Timeout = 10000 });
-                await page.ClickAsync("media-play-button>img");
+            {
+                await page.GoToAsync(streamUrl);
+                               
+                string selector = "button.plyr__control.plyr__control--overlaid";
+                bool foundSelector = await TryWaitForSelectorAsync(page, selector);
+
+                if (!foundSelector)
+                {
+                    selector = "media-play-button>img";
+                    foundSelector = await TryWaitForSelectorAsync(page, selector);
+
+                    if (!foundSelector)
+                        return default;
+
+                    await Task.Delay(1000);
+                }
+
+                await page.ClickAsync(selector);
                 await page.BringToFrontAsync();
-                await page.WaitForSelectorAsync("media-play-button>img", new WaitForSelectorOptions() { Timeout = 10000 });
-                await Task.Delay(1000);
+                await page.WaitForSelectorAsync(selector, new WaitForSelectorOptions() { Timeout = 3000 });               
                 string html = await page.GetContentAsync();
 
                 HtmlDocument htmlDocument = new();
@@ -406,6 +420,20 @@ namespace AniWorldAutoDL_Webpanel.Classes
             else
             {
                 CronJobErrorEvent?.Invoke(MessageType.Warning, WarningMessage.DownloadNotRemoved);
+            }
+        }
+
+        private static async Task<bool> TryWaitForSelectorAsync(IPage page, string selector)
+        {
+            try
+            {
+                await page.WaitForSelectorAsync(selector, new WaitForSelectorOptions { Timeout = 7000 });
+
+                return true;
+            }
+            catch (Exception)
+            {
+                return false;
             }
         }
     }
