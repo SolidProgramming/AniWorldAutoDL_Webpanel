@@ -1,7 +1,5 @@
 ﻿using Quartz;
-using System.Collections;
 using System.Text.RegularExpressions;
-using System.Linq;
 
 namespace AniWorldAutoDL_Webpanel.Misc
 {

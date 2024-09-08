@@ -1,6 +1,4 @@
-﻿using System.Diagnostics;
-using System.Runtime.InteropServices;
-using System.Security.Policy;
+﻿using System.Runtime.InteropServices;
 
 namespace AniWorldAutoDL_Webpanel.Misc
 {

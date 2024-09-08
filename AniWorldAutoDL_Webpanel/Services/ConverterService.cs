@@ -77,7 +77,7 @@ namespace AniWorldAutoDL_Webpanel.Services
 
             if (streamDuration == TimeSpan.Zero)
             {
-                logger.LogError($"{DateTime.Now} | Keine Streamduration!");
+                logger.LogError($"{DateTime.Now} | No stream duration found!");
                 return default;
             }               
 
@@ -108,6 +108,9 @@ namespace AniWorldAutoDL_Webpanel.Services
                 string proxyUri = downloaderPreferences.ProxyUri.Replace("http://", "").Replace("https://", "");
                 proxyAuthArgs = $"-http_proxy http://{downloaderPreferences.ProxyUsername}:{downloaderPreferences.ProxyPassword}@{proxyUri}";
             }
+
+            string proxyLogText = $"| Url: {downloaderPreferences.ProxyUri}@{downloaderPreferences.ProxyUsername}";
+            logger.LogInformation($"{DateTime.Now} | Use Download Proxy: {downloaderPreferences.UseProxy} {( downloaderPreferences.UseProxy ? proxyLogText : "" )}");
 
             args = $"-y {( downloaderPreferences.UseProxy ? proxyAuthArgs : "" )} -i \"{streamUrl}\" -acodec copy -vcodec copy -sn \"{filePath}\" -f matroska";
 
@@ -144,7 +147,7 @@ namespace AniWorldAutoDL_Webpanel.Services
             }
             catch (Exception ex)
             {
-                logger.LogWarning($"{DateTime.Now} |FFMPEG: {ex}");
+                logger.LogError($"{DateTime.Now} |FFMPEG: {ex}");
             }
             finally
             {

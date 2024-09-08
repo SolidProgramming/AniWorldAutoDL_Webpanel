@@ -64,7 +64,7 @@
                             </td>
                             <td class="text-center align-middle" width="50">
                                 <HxButton OnClick="@(() => RemoveDownloadFromQueue(download))" Color="ThemeColor.Danger" Icon="BootstrapIcon.XLg"></HxButton>
-                            </td>                            
+                            </td>
                         </tr>
                         i++;
                     }
@@ -73,10 +73,15 @@
             </tbody>
         </table>
     </div>
-    <div class="row">
+    <div class="row mb-5">
         @if (Downloads is not null)
-        {
-            <HxButton OnClick="IncreaseVisibleQueueEntriesCount" Color="ThemeColor.Dark" Icon="BootstrapIcon.ArrowsExpand"></HxButton>
+        {           
+            <div class="col text-center">
+                <HxButton Enabled="(VisibleQueueEntriesCount > MinQueEntriesCount)" CssClass="w-100" OnClick="DecreaseVisibleQueueEntriesCount" Color="ThemeColor.Secondary" Icon="BootstrapIcon.ArrowsCollapse"></HxButton>
+            </div>
+            <div class="col text-center">
+                <HxButton Enabled="(VisibleQueueEntriesCount < Downloads.Count)" CssClass="w-100" OnClick="IncreaseVisibleQueueEntriesCount" Color="ThemeColor.Secondary" Icon="BootstrapIcon.ArrowsExpand"></HxButton>
+            </div>
         }
         else if (Downloads is null && CronJobState == CronJobState.CheckingForDownloads)
         {
@@ -111,6 +116,9 @@
     private CronJobState CronJobState = CronJobState.WaitForNextCycle;
 
     private int VisibleQueueEntriesCount { get; set; } = 8;
+    private const int MinQueEntriesCount = 8;
+
+    private bool CanDecreaseQueEntriesCount { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
@@ -227,18 +235,18 @@
             {
                 episodeDownload.HasStopMark = false;
             }
-        }        
+        }
 
         download.HasStopMark = !download.HasStopMark;
 
         if (download.HasStopMark)
         {
-            CronJob.StopMarkDownload = download;            
+            CronJob.StopMarkDownload = download;
         }
         else
         {
             CronJob.StopMarkDownload = default;
-        }      
+        }
 
         StateHasChanged();
     }
@@ -253,6 +261,22 @@
         if (newEntriesCount > Downloads.Count)
         {
             newEntriesCount = Downloads.Count;
+        }
+
+        VisibleQueueEntriesCount = newEntriesCount;
+    }
+
+    private void DecreaseVisibleQueueEntriesCount()
+    {
+        if (Downloads is null || Downloads.Count == 0)
+            return;
+
+        int newEntriesCount = VisibleQueueEntriesCount - 5;
+
+        if (newEntriesCount < MinQueEntriesCount)
+        {
+            newEntriesCount = MinQueEntriesCount;
+
         }
 
         VisibleQueueEntriesCount = newEntriesCount;

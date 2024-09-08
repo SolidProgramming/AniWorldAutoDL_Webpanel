@@ -1,5 +1,5 @@
 ﻿using HtmlAgilityPack;
-using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.Extensions.Logging;
 using PuppeteerSharp;
 using Quartz;
 using System.Net;
@@ -72,7 +72,7 @@ namespace AniWorldAutoDL_Webpanel.Classes
             CronJobEvent?.Invoke(jobState);
         }
 
-        private void SetCronJobDownloads(int downloadCount, int languageDownloadCount)
+        private static void SetCronJobDownloads(int downloadCount, int languageDownloadCount)
         {
             DownloadCount = downloadCount;
             LanguageDownloadCount = languageDownloadCount;
@@ -122,7 +122,7 @@ namespace AniWorldAutoDL_Webpanel.Classes
             DownloaderPreferencesModel? downloaderPreferences = await apiService.GetAsync<DownloaderPreferencesModel?>("getDownloaderPreferences");
 
             string? logMessage;
-            
+
             SkippedDownloads.Clear();
 
             IEnumerable<EpisodeDownloadModel>? downloads = await apiService.GetAsync<IEnumerable<EpisodeDownloadModel>?>("getDownloads");
@@ -182,12 +182,16 @@ namespace AniWorldAutoDL_Webpanel.Classes
                 catch (HttpRequestException ex)
                 {
                     CronJobErrorEvent?.Invoke(MessageType.Error, ex.Message);
+                    logger.LogError($"{DateTime.Now} | {ex.Message}");
+
                     hasError = true;
                     continue;
                 }
                 catch (Exception ex)
                 {
                     CronJobErrorEvent?.Invoke(MessageType.Error, ex.Message);
+                    logger.LogError($"{DateTime.Now} | {ex.Message}");
+
                     hasError = true;
                     continue;
                 }
@@ -230,9 +234,11 @@ namespace AniWorldAutoDL_Webpanel.Classes
                     string? m3u8Url = await GetEpisodeM3U8(url, downloaderPreferences);
 
                     if (string.IsNullOrEmpty(m3u8Url))
+                    {
+                        logMessage = $"Für \"{originalEpisodeName} | S{episodeDownload.Download.Season:D2} E{episodeDownload.Download.Episode:D2}\" wurde keine Video Source gefunden.";
+                        CronJobErrorEvent?.Invoke(MessageType.Secondary, logMessage);
                         continue;
-
-                    await Console.Out.WriteLineAsync($"Found m3u8: {m3u8Url}");
+                    }                    
 
                     episodeDownload.Download.Name = $"{originalEpisodeName.GetValidFileName()}[{language}]";
 
@@ -242,14 +248,14 @@ namespace AniWorldAutoDL_Webpanel.Classes
 
                     if (result is not null && result.Skipped)
                     {
-                        CronJobErrorEvent?.Invoke(MessageType.Info, InfoMessage.EpisodeDownloadSkipped);
+                        CronJobErrorEvent?.Invoke(MessageType.Secondary, InfoMessage.EpisodeDownloadSkipped);
 
                         continue;
                     }
 
                     if (result is not null && result.SkippedNoResult)
                     {
-                        CronJobErrorEvent?.Invoke(MessageType.Info, InfoMessage.EpisodeDownloadSkippedFileExists);
+                        CronJobErrorEvent?.Invoke(MessageType.Secondary, InfoMessage.EpisodeDownloadSkippedFileExists);
 
                         await RemoveDownload(episodeDownload);
 
@@ -277,7 +283,7 @@ namespace AniWorldAutoDL_Webpanel.Classes
 
                         if (finishedDownloadsCount >= downloadLanguages.Count())
                             await RemoveDownload(episodeDownload);
-                    }                    
+                    }
                 }
 
                 if (StopMarkDownload == episodeDownload)
@@ -333,8 +339,11 @@ namespace AniWorldAutoDL_Webpanel.Classes
             Browser ??= await Puppeteer.LaunchAsync(new LaunchOptions
             {
                 Headless = true,
-                Args = [(downloaderPreferences.UseProxy ? $"--proxy-server={downloaderPreferences.ProxyUri}" : "")]
+                Args = [( downloaderPreferences.UseProxy ? $"--proxy-server={downloaderPreferences.ProxyUri}" : "" )]
             });
+
+            string proxyLogText = $"| Url: {downloaderPreferences.ProxyUri}@{downloaderPreferences.ProxyUsername}";
+            logger.LogInformation($"{DateTime.Now} | Use Proxy: {downloaderPreferences.UseProxy} {(downloaderPreferences.UseProxy ? proxyLogText : "")}");
 
             using IPage? page = await Browser.NewPageAsync();
 
@@ -349,56 +358,19 @@ namespace AniWorldAutoDL_Webpanel.Classes
 
             try
             {
-                await page.GoToAsync(streamUrl);
-                               
-                string selector = "button.plyr__control.plyr__control--overlaid";
-                bool foundSelector = await TryWaitForSelectorAsync(page, selector);
+                string? videoPageHtml = await GetVideoPageHtml(page, streamUrl);
 
-                if (!foundSelector)
-                {
-                    selector = "media-play-button>img";
-                    foundSelector = await TryWaitForSelectorAsync(page, selector);
+                if (string.IsNullOrEmpty(videoPageHtml))
+                    return default;
 
-                    if (!foundSelector)
-                        return default;
-
-                    await Task.Delay(1000);
-                }
-
-                await page.ClickAsync(selector);
-                await page.BringToFrontAsync();
-                await page.WaitForSelectorAsync(selector, new WaitForSelectorOptions() { Timeout = 3000 });               
-                string html = await page.GetContentAsync();
-
-                HtmlDocument htmlDocument = new();
-                htmlDocument.LoadHtml(html);
-
-                Match m3u8NodeMatch = new Regex("https://delivery-node-(.*?)\\);").Match(html);
-
-                if (m3u8NodeMatch.Success)
-                {
-                    return HttpUtility.HtmlDecode(m3u8NodeMatch.Value.TrimEnd('"', ')', ';'));
-                }
-
-                Match hlsMatch = new Regex("'hls': '(.*?)',").Match(html);
-
-                if (hlsMatch.Success)
-                {
-                    return HttpUtility.HtmlDecode(hlsMatch.Groups[1].Value);
-                }
-
-                Match sourceMatch = new Regex("<source src=\"(.*?)\" type=\"application/x-mpegurl\" data-vds=\"\">").Match(html);
-
-                if (sourceMatch.Success)
-                {
-                    return HttpUtility.HtmlDecode(sourceMatch.Groups[1].Value);
-                }
+                if (TryGetVideoSource(videoPageHtml, out string? m3u8))
+                    return m3u8;
 
                 return default;
             }
             catch (Exception ex)
             {
-                await Console.Out.WriteLineAsync(ex.ToString());
+                logger.LogError(ex.Message);
                 return null;
             }
             finally
@@ -407,6 +379,69 @@ namespace AniWorldAutoDL_Webpanel.Classes
                 Browser = default;
             }
 
+        }
+
+        private bool TryGetVideoSource(string html, out string? m3u8)
+        {
+            m3u8 = default;
+
+            HtmlDocument htmlDocument = new();
+            htmlDocument.LoadHtml(html);
+
+            Match m3u8NodeMatch = new Regex("https://delivery-node-(.*?)\\);").Match(html);
+
+            if (m3u8NodeMatch.Success)
+            {
+                m3u8 = HttpUtility.HtmlDecode(m3u8NodeMatch.Value.TrimEnd('"', ')', ';'));
+                return true;
+            }
+
+            Match hlsMatch = new Regex("'hls': '(.*?)',").Match(html);
+
+            if (hlsMatch.Success)
+            {
+                m3u8 = HttpUtility.HtmlDecode(hlsMatch.Groups[1].Value);
+                return true;
+            }
+
+            Match sourceMatch = new Regex("<source src=\"(.*?)\" type=\"application/x-mpegurl\" data-vds=\"\">").Match(html);
+
+            if (sourceMatch.Success)
+            {
+                m3u8 = HttpUtility.HtmlDecode(sourceMatch.Groups[1].Value);
+                return true;
+            }
+
+            logger.LogWarning($"{DateTime.Now} | Could not fetch any video source!");
+
+            return false;
+        }
+
+        private async Task<string?> GetVideoPageHtml(IPage page, string streamUrl)
+        {
+            logger.LogInformation($"{DateTime.Now} | Trying to fetch stream m3u8...");
+
+            await page.GoToAsync(streamUrl);
+
+            string selector = "button.plyr__control.plyr__control--overlaid";
+            bool foundSelector = await TryWaitForSelectorAsync(page, selector);
+
+            if (!foundSelector)
+            {
+                selector = "media-play-button>img";
+                foundSelector = await TryWaitForSelectorAsync(page, selector);
+
+                if (!foundSelector)
+                    return default;
+            }
+
+            await page.ClickAsync(selector);
+            await page.BringToFrontAsync();
+
+            selector = "media-player > media-provider > video > source";
+            await TryWaitForSelectorAsync(page, selector, 3000);
+
+            return await page.GetContentAsync();
         }
 
         private async Task RemoveDownload(EpisodeDownloadModel episodeDownload)
@@ -423,11 +458,11 @@ namespace AniWorldAutoDL_Webpanel.Classes
             }
         }
 
-        private static async Task<bool> TryWaitForSelectorAsync(IPage page, string selector)
+        private static async Task<bool> TryWaitForSelectorAsync(IPage page, string selector, int timeout = 5000)
         {
             try
             {
-                await page.WaitForSelectorAsync(selector, new WaitForSelectorOptions { Timeout = 7000 });
+                await page.WaitForSelectorAsync(selector, new WaitForSelectorOptions { Timeout = timeout });
 
                 return true;
             }

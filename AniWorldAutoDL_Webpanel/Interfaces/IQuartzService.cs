@@ -1,6 +1,4 @@
-﻿using Quartz;
-
-namespace AniWorldAutoDL_Webpanel.Interfaces
+﻿namespace AniWorldAutoDL_Webpanel.Interfaces
 {
     public interface IQuartzService
     {

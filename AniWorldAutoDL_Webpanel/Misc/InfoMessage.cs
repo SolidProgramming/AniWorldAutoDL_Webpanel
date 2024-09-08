@@ -10,8 +10,8 @@
         internal const string CheckingForDownloads = "Auf neue Downloads prüfen...";
         internal const string CronJobInit = "Cron Job initialized.";
         internal const string CronJobChangedState = "Cron Job changed state to:";
-        internal const string CronJobRunning = "Cron Job is currently running. Skipping...";
-        internal const string EpisodeDownloadSkipped = "Download übersprungen. Episode wird beim nächsten Durchgang heruntergeladen.";
+        internal const string CronJobRunning = "Aufgabe wird bereits ausgeführt...";
+        internal const string EpisodeDownloadSkipped = "Download übersprungen.";
         internal const string EpisodeDownloadSkippedFileExists = "Download übersprungen. Datei existiert bereits.";
         internal const string NoDownloadsInQueue = "Es sind keine Downloads in der Warteschlange!";
         internal const string DownloaderPreferencesSaved = "Deine Einstellungen wurden gespeichert!";

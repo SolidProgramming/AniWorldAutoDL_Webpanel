@@ -1,6 +1,4 @@
-﻿using CliWrap;
-
-namespace AniWorldAutoDL_Webpanel.Interfaces
+﻿namespace AniWorldAutoDL_Webpanel.Interfaces
 {
     internal interface IConverterService
     {
