@@ -122,8 +122,6 @@ if (downloaderPreferences is not null && downloaderPreferences.UseProxy)
     });
 }
 
-app.Logger.LogInformation($"{DateTime.Now} | Checking if Hosters are reachable...");
-
 (bool success, string? ipv4) = await new HttpClient().GetIPv4();
 if (!success)
 {
@@ -132,6 +130,8 @@ if (!success)
 }
 
 app.Logger.LogInformation($"{DateTime.Now} | Your WAN IP is: {ipv4}");
+
+app.Logger.LogInformation($"{DateTime.Now} | Checking if Hosters are reachable...");
 
 bool hosterReachableSTO = await HosterHelper.HosterReachable(sto, proxy);
 
