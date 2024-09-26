@@ -149,9 +149,7 @@ namespace AniWorldAutoDL_Webpanel.Classes
                 EpisodeDownloadModel episodeDownload = DownloadQue.Dequeue();
 
                 if (SkippedDownloads.Contains(episodeDownload))
-                {
                     continue;
-                }
 
                 SetCronJobDownloads(DownloadQue.Count, 0);
 
@@ -339,7 +337,7 @@ namespace AniWorldAutoDL_Webpanel.Classes
             Browser ??= await Puppeteer.LaunchAsync(new LaunchOptions
             {
                 Headless = true,
-                Args = [( downloaderPreferences.UseProxy ? $"--proxy-server={downloaderPreferences.ProxyUri}" : "" )]
+                Args = ["--no-sandbox", ( downloaderPreferences.UseProxy ? $"--proxy-server={downloaderPreferences.ProxyUri}" : "" )]
             });
 
             string proxyLogText = $"| Url: {downloaderPreferences.ProxyUri}@{downloaderPreferences.ProxyUsername}";

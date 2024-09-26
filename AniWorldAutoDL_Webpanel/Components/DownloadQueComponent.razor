@@ -3,7 +3,7 @@
 @inject IApiService ApiService
 @inject Toolbelt.Blazor.I18nText.I18nText I18nText
 
-<div class="container mt-5">
+<div class="container mt-5">    
     <div style="overflow-y: auto;">
         <table class="table">
             <thead>
@@ -75,7 +75,7 @@
     </div>
     <div class="row mb-5">
         @if (Downloads is not null)
-        {           
+        {
             <div class="col text-center">
                 <HxButton Enabled="(VisibleQueueEntriesCount > MinQueEntriesCount)" CssClass="w-100" OnClick="DecreaseVisibleQueueEntriesCount" Color="ThemeColor.Secondary" Icon="BootstrapIcon.ArrowsCollapse"></HxButton>
             </div>

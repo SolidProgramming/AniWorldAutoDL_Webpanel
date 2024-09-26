@@ -15,30 +15,21 @@ using System.Net.Sockets;
 using Toolbelt.Blazor.Extensions.DependencyInjection;
 using Toolbelt.Blazor.I18nText;
 
-SettingsModel? settings = SettingsHelper.ReadSettings<SettingsModel>();
-
-if (settings is null || string.IsNullOrEmpty(settings.ApiUrl))
-{
-    Console.WriteLine("Settings.json Datei nicht gefunden oder nicht vollständig!\nProgramm wird beendet.");
-    Console.ReadKey();
-    return;
-}
-
-string? hostUrl = GetHostAdress();
-
-if (AnotherInstanceExists())
-{
-    OpenBrowser(hostUrl);
-    return;
-}
-
-await Console.Out.WriteLineAsync("Downloading Chrome");
-BrowserFetcher? browserFetcher = new();
-await browserFetcher.DownloadAsync();
-
 WebApplicationBuilder? builder = WebApplication.CreateBuilder(args);
 
-builder.WebHost.UseUrls(hostUrl, "http://localhost:5080");
+string? hostUrl = default;
+if (Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER") != "true")
+{
+    hostUrl = GetHostAdress();
+
+    if (AnotherInstanceExists())
+    {
+        OpenBrowser(hostUrl);
+        return;
+    }
+
+    builder.WebHost.UseUrls(hostUrl, "http://localhost:5080");
+}
 
 builder.Services.AddHsts(_ =>
 {
@@ -74,6 +65,18 @@ builder.Services.AddI18nText(_ =>
 
 WebApplication? app = builder.Build();
 
+SettingsModel? settings = SettingsHelper.ReadSettings<SettingsModel>();
+
+if (settings is null || string.IsNullOrEmpty(settings.ApiUrl))
+{
+    app.Logger.LogError($"{DateTime.Now} | Could not find Settings.json file or settings not complete.");
+    return;
+}
+
+app.Logger.LogInformation($"{DateTime.Now} | Downloading and installing chrome.");
+BrowserFetcher? browserFetcher = new();
+await browserFetcher.DownloadAsync();
+
 app.UseHsts();
 app.UseHttpsRedirection();
 app.UseStaticFiles();
@@ -87,8 +90,7 @@ bool converterInitSuccess = converterService.Init();
 
 if (!converterInitSuccess)
 {
-    Console.Write("\nProgramm wird beendet.");
-    Console.ReadKey();
+    app.Logger.LogError($"{DateTime.Now} | Converter couldn't be initialized!");
     return;
 }
 
@@ -97,8 +99,7 @@ bool apiInitSuccess = apiService.Init();
 
 if (!apiInitSuccess)
 {
-    Console.Write("\nProgramm wird beendet.");
-    Console.ReadKey();
+    app.Logger.LogError($"{DateTime.Now} | API service couldn't be initialized!");
     return;
 }
 
@@ -111,7 +112,7 @@ WebProxy? proxy = default;
 
 if (downloaderPreferences is not null && downloaderPreferences.UseProxy)
 {
-    await Console.Out.WriteLineAsync($"Proxy configured: {downloaderPreferences.ProxyUri}");
+    app.Logger.LogInformation($"{DateTime.Now} | Proxy configured: {downloaderPreferences.ProxyUri}");
 
     proxy = ProxyFactory.CreateProxy(new ProxyAccountModel()
     {
@@ -121,13 +122,28 @@ if (downloaderPreferences is not null && downloaderPreferences.UseProxy)
     });
 }
 
-await Console.Out.WriteLineAsync("Checking if Hosters are reachable...");
+app.Logger.LogInformation($"{DateTime.Now} | Checking if Hosters are reachable...");
+
+(bool success, string? ipv4) = await new HttpClient().GetIPv4();
+if (!success)
+{
+    app.Logger.LogError($"{DateTime.Now} | HttpClient could not retrieve WAN IP Address.");
+    return;
+}
+
+app.Logger.LogInformation($"{DateTime.Now} | Your WAN IP is: {ipv4}");
 
 bool hosterReachableSTO = await HosterHelper.HosterReachable(sto, proxy);
 
 if (!hosterReachableSTO)
 {
-    OpenBrowser(sto.BrowserUrl);
+    app.Logger.LogError($"{DateTime.Now} | Hoster: {sto.Host} not reachable. Maybe there is a captcha you need to solve.");
+
+    if (Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER") != "true")
+    {
+        OpenBrowser(sto.BrowserUrl);
+    }
+
     return;
 }
 
@@ -135,11 +151,16 @@ bool hosterReachableAniworld = await HosterHelper.HosterReachable(aniworld, prox
 
 if (!hosterReachableAniworld)
 {
-    OpenBrowser(aniworld.BrowserUrl);
+    app.Logger.LogError($"{DateTime.Now} | Hoster: {aniworld.Host} not reachable. Maybe there is a captcha you need to solve.");
+
+    if (Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER") != "true")
+    {
+        OpenBrowser(aniworld.BrowserUrl);
+    }
     return;
 }
 
-await Console.Out.WriteLineAsync("Initializing Cronjob and HttpClients...");
+app.Logger.LogInformation($"{DateTime.Now} | Initializing Cronjob and HttpClients...");
 await CronJob.InitAsync(proxy);
 
 IQuartzService quartz = app.Services.GetRequiredService<IQuartzService>();
@@ -157,8 +178,10 @@ else
     }
 }
 
-
-OpenBrowser(hostUrl);
+if (!RuntimeInformation.IsOSPlatform(OSPlatform.Linux) || Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER") != "true")
+{
+    OpenBrowser(hostUrl);
+}
 
 app.Run();
 
@@ -170,7 +193,10 @@ static void OpenBrowser(string url)
     }
     else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
     {
-        Process.Start("xdg-open", url);
+        if (Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER") != "true")
+        {
+            Process.Start("xdg-open", url);
+        }
     }
     else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
     {
@@ -184,15 +210,16 @@ static void OpenBrowser(string url)
 
 static bool AnotherInstanceExists()
 {
+    if (Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER") == "true")
+        return false;
+
     Process currentRunningProcess = Process.GetCurrentProcess();
 
     Process[] listOfProcs = Process.GetProcessesByName(currentRunningProcess.ProcessName);
 
     foreach (Process proc in listOfProcs)
     {
-
         if (( proc.MainModule.FileName == currentRunningProcess.MainModule.FileName ) && ( proc.Id != currentRunningProcess.Id ))
-
             return true;
     }
     return false;
@@ -202,7 +229,16 @@ static string? GetHostAdress()
 {
     IPAddress[] addresslist = Dns.GetHostAddresses(Dns.GetHostName());
 
-    string ipAdress = addresslist.FirstOrDefault(_ => _.AddressFamily == AddressFamily.InterNetwork && _.MapToIPv4().ToString().StartsWith("192.168"))?.MapToIPv4().ToString();
+    string? ipAdress;
+
+    if (Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER") == "true")
+    {
+        ipAdress = addresslist.FirstOrDefault(_ => _.AddressFamily == AddressFamily.InterNetwork)?.MapToIPv4().ToString();
+    }
+    else
+    {
+        ipAdress = addresslist.FirstOrDefault(_ => _.AddressFamily == AddressFamily.InterNetwork && _.MapToIPv4().ToString().StartsWith("192.168"))?.MapToIPv4().ToString();
+    }
 
     string hostAdress = $"http://{ipAdress}:5080";
 

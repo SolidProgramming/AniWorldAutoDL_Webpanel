@@ -1,4 +1,6 @@
 ﻿using CliWrap;
+using Quartz.Util;
+using System.IO;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -79,7 +81,7 @@ namespace AniWorldAutoDL_Webpanel.Services
             {
                 logger.LogError($"{DateTime.Now} | No stream duration found!");
                 return default;
-            }               
+            }
 
             download.StreamDuration = streamDuration;
 
@@ -103,7 +105,7 @@ namespace AniWorldAutoDL_Webpanel.Services
             string args = "";
             string proxyAuthArgs = "";
 
-            if (downloaderPreferences is not null && !string.IsNullOrEmpty(downloaderPreferences.ProxyUri))
+            if (downloaderPreferences.UseProxy && !string.IsNullOrWhiteSpace(downloaderPreferences.ProxyUri))
             {
                 string proxyUri = downloaderPreferences.ProxyUri.Replace("http://", "").Replace("https://", "");
                 proxyAuthArgs = $"-http_proxy http://{downloaderPreferences.ProxyUsername}:{downloaderPreferences.ProxyPassword}@{proxyUri}";
@@ -162,19 +164,27 @@ namespace AniWorldAutoDL_Webpanel.Services
 
         private static string GetFileName(DownloadModel download, string downloadPath)
         {
-            string folderPath;
+            string folderPath = "";
+            string seriesFolderPath = "";
             string seasonFolderName;
             string episodeFolderName;
 
             seasonFolderName = $"S{download.Season:D2}";
             episodeFolderName = $"E{download.Episode:D2}";
 
-            folderPath = Path.Combine(downloadPath, download.Name, seasonFolderName);
+            if (Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER") == "true")
+            {
+                folderPath = @"/app/appdata/downloads";
 
-            if (!Directory.Exists(downloadPath))
-                Directory.CreateDirectory(downloadPath);
+                seriesFolderPath = Path.Combine(folderPath, download.Name);
 
-            string seriesFolderPath = Path.Combine(downloadPath, download.Name);
+                folderPath = Path.Combine(seriesFolderPath, seasonFolderName);              
+            }
+            else
+            {
+                folderPath = Path.Combine(downloadPath, download.Name, seasonFolderName);
+            }
+            
             if (!Directory.Exists(seriesFolderPath))
                 Directory.CreateDirectory(seriesFolderPath);
 
@@ -206,7 +216,7 @@ namespace AniWorldAutoDL_Webpanel.Services
                 string bitrateText = bitrateMatch.Groups[1].Value;
                 progress.Bitrate = double.Parse(bitrateText);
 
-                Match sizeMatch = Regex.Match(output, "size=\\s*(\\d+)kB time");
+                Match sizeMatch = Regex.Match(output, "size=\\s*(\\d+)Ki?B time", RegexOptions.IgnoreCase);
 
                 if (!sizeMatch.Success)
                     return;
@@ -222,11 +232,11 @@ namespace AniWorldAutoDL_Webpanel.Services
                 string timeText = timeMatch.Groups[1].Value;
                 progress.Time = TimeSpan.Parse(timeText);
 
-                long bytesDownloaded = (( progress.Size * 1024 ) - PreviousDownloadSize);
+                long bytesDownloaded = ( ( progress.Size * 1024 ) - PreviousDownloadSize );
 
                 if (bytesDownloaded > 0)
                 {
-                    progress.KBytePerSecond = (bytesDownloaded / 1024) / ( DateTime.Now - FFMPEGStartTime ).Value.TotalSeconds;
+                    progress.KBytePerSecond = ( bytesDownloaded / 1024 ) / ( DateTime.Now - FFMPEGStartTime ).Value.TotalSeconds;
                     PreviousDownloadSize = progress.Size;
                 }
 
@@ -272,19 +282,19 @@ namespace AniWorldAutoDL_Webpanel.Services
             return remainingTimeSpan;
         }
 
-        private static async Task<TimeSpan> GetStreamDuration(string streamUrl, DownloaderPreferencesModel downloaderPreferences)
+        private async Task<TimeSpan> GetStreamDuration(string streamUrl, DownloaderPreferencesModel downloaderPreferences)
         {
             StringBuilder stdOutBuffer = new();
 
             string args = "";
             string proxyAuthArgs = "";
 
-            if (downloaderPreferences is not null && !string.IsNullOrEmpty(downloaderPreferences.ProxyUri))
+            if (downloaderPreferences.UseProxy && !string.IsNullOrWhiteSpace(downloaderPreferences.ProxyUri))
             {
                 string proxyUri = downloaderPreferences.ProxyUri.Replace("http://", "").Replace("https://", "");
                 proxyAuthArgs = $"-http_proxy http://{downloaderPreferences.ProxyUsername}:{downloaderPreferences.ProxyPassword}@{proxyUri}";
             }
-            
+
             args = $"{( downloaderPreferences.UseProxy ? proxyAuthArgs : "" )} -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 -sexagesimal \"{streamUrl}\"";
 
             string? binPath = Helper.GetFFProbePath();
@@ -301,12 +311,12 @@ namespace AniWorldAutoDL_Webpanel.Services
             }
             catch (OperationCanceledException)
             {
-                Console.Out.WriteLine($"{DateTime.Now} | {WarningMessage.StreamDurationTimeout}");
+                logger.LogWarning($"{DateTime.Now} | {WarningMessage.StreamDurationTimeout}");
                 return TimeSpan.Zero;
             }
             catch (Exception ex)
             {
-                Console.Out.WriteLine($"{DateTime.Now} |FFPROBE: {ex}");
+                logger.LogError($"{DateTime.Now} |FFPROBE: {ex}");
                 return TimeSpan.Zero;
             }
 
