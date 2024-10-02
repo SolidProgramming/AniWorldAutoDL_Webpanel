@@ -174,7 +174,7 @@ namespace AniWorldAutoDL_Webpanel.Services
             
             if (Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER") == "true")
             {
-                folderPath = @"/downloads";
+                folderPath = @"/app/downloads";
 
                 seriesFolderPath = Path.Combine(folderPath, download.Name);
 
