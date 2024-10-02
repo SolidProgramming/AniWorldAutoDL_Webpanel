@@ -16,7 +16,10 @@
 @inject Toolbelt.Blazor.I18nText.I18nText I18nText
 
 <PageTitle>Dashboard</PageTitle>
-<UpdateComponent></UpdateComponent>
+@if (Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER") != "true")
+{
+    <UpdateComponent></UpdateComponent>
+}
 <div class="container mt-4">
     <HxModal ShowCloseButton="false" CloseOnEscape="false" Size="ModalSize.Large" @ref="DownloadPathModal" Centered="true">
         <BodyTemplate>
