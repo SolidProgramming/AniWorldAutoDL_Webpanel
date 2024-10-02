@@ -36,13 +36,14 @@ namespace AniWorldAutoDL_Webpanel.Misc
         {
             { Language.GerDub, "1"},
             { Language.GerSub, "3"},
+            { Language.EngDubGerSub, "3"},
             { Language.EngDub, "2"},
             { Language.EngSub, "2"},
         };
 
         internal static string GetValidFileName(this string name)
         {
-            string regexSearch = new string(Path.GetInvalidFileNameChars()) + new string(Path.GetInvalidPathChars());
+            string regexSearch = new string(Path.GetInvalidFileNameChars()) + new string(Path.GetInvalidPathChars()) + new string(":");
             Regex r = new(string.Format("[{0}]", Regex.Escape(regexSearch)));
             return r.Replace(name, "");
         }

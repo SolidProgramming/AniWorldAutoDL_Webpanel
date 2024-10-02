@@ -95,6 +95,13 @@ namespace AniWorldAutoDL_Webpanel.Misc
                 languageRedirectLinks.Add(Language.GerSub, redirectLinks);
             }
 
+            redirectLinks = GetLanguageRedirectLinksNodes(Language.EngDubGerSub);
+
+            if (redirectLinks.Count > 0)
+            {
+                languageRedirectLinks.Add(Language.EngDubGerSub, redirectLinks);
+            }
+
             return languageRedirectLinks;
 
 

@@ -171,10 +171,10 @@ namespace AniWorldAutoDL_Webpanel.Services
 
             seasonFolderName = $"S{download.Season:D2}";
             episodeFolderName = $"E{download.Episode:D2}";
-
+            
             if (Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER") == "true")
             {
-                folderPath = @"/app/appdata/downloads";
+                folderPath = @"/downloads";
 
                 seriesFolderPath = Path.Combine(folderPath, download.Name);
 
@@ -182,9 +182,11 @@ namespace AniWorldAutoDL_Webpanel.Services
             }
             else
             {
+                seriesFolderPath = Path.Combine(downloadPath, download.Name);
+
                 folderPath = Path.Combine(downloadPath, download.Name, seasonFolderName);
             }
-            
+
             if (!Directory.Exists(seriesFolderPath))
                 Directory.CreateDirectory(seriesFolderPath);
 

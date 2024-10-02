@@ -375,3 +375,5 @@ FodyWeavers.xsd
 /AniWorldAutoDL_Webpanel/Binaries/ffmpeg.exe
 /AniWorldAutoDL_Webpanel/appdata/Binaries/ffprobe
 /AniWorldAutoDL_Webpanel/appdata/Binaries/ffmpeg
+/AniWorldAutoDL_Webpanel/Binaries/Linux/ffmpeg
+/AniWorldAutoDL_Webpanel/Binaries/Linux/ffprobe

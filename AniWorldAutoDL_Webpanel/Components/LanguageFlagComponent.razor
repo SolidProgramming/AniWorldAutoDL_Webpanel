@@ -17,6 +17,11 @@
     @if (Languages.HasFlag(Language.EngDub))
     {
         <img class="@(PreviousLangFlags > 0 ? FlagWithSpacerCss : FlagCss)" style="width: 32px" src="img/english_sub.svg">
+         PreviousLangFlags++;
+    }
+    @if(Languages.HasFlag(Language.EngDubGerSub))
+    {
+        <img class="@(PreviousLangFlags > 0 ? FlagWithSpacerCss : FlagCss)" style="width: 32px" src="img/english_dub-german_sub.svg">
     }
 </div>
 
