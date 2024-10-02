@@ -6,7 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <UserSecretsId>0cd1c8fc-d620-4f40-b866-7ba3eac648c1</UserSecretsId>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
-    <AssemblyVersion>1.2.2.3</AssemblyVersion>
+    <AssemblyVersion>1.2.3.0</AssemblyVersion>
     <ApplicationIcon>favicon.ico</ApplicationIcon>
 	  <I18nTextFallBackLanguage>de</I18nTextFallBackLanguage>
   </PropertyGroup>
@@ -34,6 +34,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="Binaries\ffmpeg.exe">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="Binaries\ffprobe">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
