@@ -49,7 +49,7 @@
     <None Include="i18ntext\Lang.de.json" />
     <None Include="i18ntext\Lang.en.json" />
     <None Include="settings.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </None>
   </ItemGroup>
 
