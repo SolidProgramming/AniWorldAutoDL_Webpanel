@@ -7,7 +7,6 @@ RUN apt-get install -y wget unzip fontconfig locales gconf-service libasound2 li
 USER 1000:100
 WORKDIR /app
 RUN mkdir -p /app/downloads && chmod -R 777 /app/downloads
-#RUN mkdir -p /downloads && chmod 777 /downloads
 EXPOSE 8080
 EXPOSE 8081
 

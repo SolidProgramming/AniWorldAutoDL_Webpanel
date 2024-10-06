@@ -27,14 +27,17 @@
                 </HxBadge>
             </ContentTemplate>
         </HxSidebarItem>
-        <HxSidebarItem Icon="BootstrapIcon.ArrowDownCircle" Href="@Routes.Updates">
-            <ContentTemplate>
-                <span class="ms-2">@LangText["NavCheckUpdates"]</span>
-                <HxBadge Color="ThemeColor.Secondary" CssClass="ms-2">
+       @if (Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER") != "true")
+        {
+            <HxSidebarItem Icon="BootstrapIcon.ArrowDownCircle" Href="@Routes.Updates">
+                <ContentTemplate>
+                    <span class="ms-2">@LangText["NavCheckUpdates"]</span>
+                    <HxBadge Color="ThemeColor.Secondary" CssClass="ms-2">
 
-                </HxBadge>
-            </ContentTemplate>
-        </HxSidebarItem>
+                    </HxBadge>
+                </ContentTemplate>
+            </HxSidebarItem>
+        }
         <HxSidebarItem Icon="BootstrapIcon.BoxArrowLeft" CssClass="mt-5 text-danger" Href="@Routes.Shutdown">
             <ContentTemplate>
                 <span class="ms-2">@LangText["NavShutdownServer"]</span>
