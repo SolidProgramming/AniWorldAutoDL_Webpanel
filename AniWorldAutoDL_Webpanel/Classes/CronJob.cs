@@ -1,4 +1,5 @@
-﻿using HtmlAgilityPack;
+﻿using AniWorldAutoDL_Webpanel.Services;
+using HtmlAgilityPack;
 using Microsoft.Extensions.Logging;
 using PuppeteerSharp;
 using Quartz;
@@ -284,10 +285,13 @@ namespace AniWorldAutoDL_Webpanel.Classes
                     }
                 }
 
-                if (StopMarkDownload == episodeDownload)
+                if (StopMarkDownload is not null && StopMarkDownload.Download == episodeDownload.Download)
                 {
+                    await Abort();
+                    quartzService.CancelJob();
                     StopMarkDownload = default;
                     CronJobErrorEvent?.Invoke(MessageType.Info, InfoMessage.StopMarkReached);
+                    SetCronJobState(CronJobState.Paused);
                     break;
                 }
             }

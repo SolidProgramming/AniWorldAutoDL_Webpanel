@@ -5,6 +5,7 @@
         Undefined,
         WaitForNextCycle,
         CheckingForDownloads,
-        Running
+        Running,
+        Paused
     }
 }

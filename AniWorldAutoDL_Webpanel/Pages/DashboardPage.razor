@@ -71,7 +71,7 @@
                         {
                             bool hasStopMark = Download == CronJob.StopMarkDownload?.Download;
 
-                            <HxButton Enabled="false" Color="@(hasStopMark ? ThemeColor.Info : ThemeColor.Secondary)" Icon="@(hasStopMark ? BootstrapIcon.FlagFill : BootstrapIcon.Flag)"></HxButton>
+                            <HxButton OnClick="@(() => ToggleStopMark())" Color="@(hasStopMark ? ThemeColor.Info : ThemeColor.Secondary)" Icon="@(hasStopMark ? BootstrapIcon.FlagFill : BootstrapIcon.Flag)"></HxButton>
                         }
                     </td>
                     <td class="text-center align-middle" width="50">
@@ -551,6 +551,9 @@
                 CheckDownloadsButtonSpinner = true;
                 ToastService.AddMessage(InfoMessage.CheckingForDownloads, MessageType.Secondary);
                 break;
+            case CronJobState.Paused:
+                NextCronJobCycle = default;
+                break;
             default:
                 break;
         }
@@ -669,5 +672,30 @@
         SettingsHelper.SaveSettings(Settings);
 
         await DownloadPathModal.HideAsync();
+    }
+
+    private void ToggleStopMark()
+    {
+        if (CronJob.StopMarkDownload is null)
+        {
+            CronJob.StopMarkDownload = new EpisodeDownloadModel();
+        }
+
+        CronJob.StopMarkDownload.HasStopMark = !CronJob.StopMarkDownload.HasStopMark;
+
+        if (CronJob.StopMarkDownload.HasStopMark)
+        {
+            CronJob.StopMarkDownload = new EpisodeDownloadModel()
+                {
+                    Download = Download,
+                    HasStopMark = CronJob.StopMarkDownload.HasStopMark
+                };
+        }
+        else
+        {
+            CronJob.StopMarkDownload = default;
+        }
+
+        //StateHasChanged();
     }
 }
