@@ -201,7 +201,7 @@
             </tr>
         </thead>
         <tbody>
-            <tr>      
+            <tr>
                 <td class="text-center align-middle" width="50">
                     @switch (ConverterState)
                     {
@@ -398,7 +398,7 @@
 
             ConverterState = ConverterService.GetConverterState();
 
-            CronJob = new(CronJobLogger, ApiService, CS, AppLifetime);
+            CronJob = new(CronJobLogger, ApiService, CS, AppLifetime, QuartzService);
 
             CronJob.CronJobEvent += CronJobEvent;
             CronJob.CronJobErrorEvent += CronJobErrorEvent;
@@ -596,9 +596,17 @@
     private async Task CheckForDownloads()
     {
         if (CronJob is null)
-            CronJob = new(CronJobLogger, ApiService, CS, AppLifetime);
+            CronJob = new(CronJobLogger, ApiService, CS, AppLifetime, QuartzService);
 
-        await CronJob.CheckForNewDownloads();
+
+        if (QuartzService.IsCancelled())
+        {
+            QuartzService.StartJob();
+        }
+        else
+        {
+            await CronJob.CheckForNewDownloads();
+        }
     }
 
     private async Task StopConverter()
@@ -607,6 +615,11 @@
             await CronJob.Abort();
 
         ConverterService.Abort();
+
+        QuartzService.CancelJob();
+
+        NextCronJobCycle = null;
+        // await InvokeAsync(() => StateHasChanged());
     }
 
     private void SkipDownload()

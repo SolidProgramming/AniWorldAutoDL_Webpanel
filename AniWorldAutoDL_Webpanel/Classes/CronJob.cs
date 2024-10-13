@@ -9,7 +9,7 @@ using System.Web;
 
 namespace AniWorldAutoDL_Webpanel.Classes
 {
-    internal class CronJob(ILogger<CronJob> logger, IApiService apiService, IConverterService converterService, IHostApplicationLifetime appLifetime)
+    internal class CronJob(ILogger<CronJob> logger, IApiService apiService, IConverterService converterService, IHostApplicationLifetime appLifetime, IQuartzService quartzService)
          : IJob
     {
         public delegate void CronJobEventHandler(CronJobState jobState);
@@ -330,6 +330,8 @@ namespace AniWorldAutoDL_Webpanel.Classes
             {
                 await Browser.CloseAsync();
             }
+
+            NextRun = null;          
         }
 
         private async Task<string?> GetEpisodeM3U8(string streamUrl, DownloaderPreferencesModel downloaderPreferences)

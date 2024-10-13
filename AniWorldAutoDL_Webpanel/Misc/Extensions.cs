@@ -4,34 +4,7 @@ using System.Text.RegularExpressions;
 namespace AniWorldAutoDL_Webpanel.Misc
 {
     internal static class Extensions
-    {
-        internal static void AddJobAndTrigger<T>(this IServiceCollectionQuartzConfigurator quartz, int intervalInMinutes) where T : IJob
-        {
-            // Use the name of the IJob as the appsettings.json key
-            string jobName = typeof(T).Name;
-
-            // Try and load the schedule from configuration
-            var configKey = $"Quartz:{jobName}";
-
-            // register the job as before
-            JobKey? jobKey = new(jobName);
-            quartz.AddJob<T>(opts => opts.WithIdentity(jobKey));
-
-            DateTimeOffset startTime = new DateTimeOffset(DateTime.Now.ToLocalTime())
-                                                .AddSeconds(10);
-
-            quartz.AddTrigger(opts => opts
-                .ForJob(jobKey)
-                .WithIdentity(jobName + "-trigger")
-                .WithSimpleSchedule(_ =>
-                    _.WithIntervalInMinutes(intervalInMinutes)
-                    .RepeatForever())
-                .StartAt(startTime));
-
-            CronJob.NextRun = startTime.DateTime;
-            CronJob.Interval = intervalInMinutes;            
-        }
-
+    {       
         private static Dictionary<Language, string> VOELanguageKeyCollection = new()
         {
             { Language.GerDub, "1"},
