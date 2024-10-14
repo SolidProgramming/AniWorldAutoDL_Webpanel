@@ -1,5 +1,4 @@
 ﻿using Quartz;
-using static Quartz.Logging.OperationName;
 
 namespace AniWorldAutoDL_Webpanel.Services
 {

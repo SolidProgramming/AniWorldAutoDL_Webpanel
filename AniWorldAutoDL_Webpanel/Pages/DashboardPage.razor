@@ -242,6 +242,10 @@
                 <th scope="col" class="text-center" style="font-family: 'Roboto', sans-serif;">@LangText["Season"]</th>
                 <th scope="col" class="text-center" style="font-family: 'Roboto', sans-serif;">Episode</th>
                 <th scope="col" class="text-center" style="font-family: 'Roboto', sans-serif;">%</th>
+                 <th scope="col" class="text-center text-warning" style="font-family: 'Roboto', sans-serif;">
+                        <HxIcon Icon="BootstrapIcon.LightningChargeFill" />
+                </th>
+                <th scope="col" class="text-center text-info" style="font-family: 'Roboto', sans-serif;">ETA</th>
             </tr>
         </thead>
         <tbody>
@@ -267,17 +271,37 @@
                         <HxIcon Icon="BootstrapIcon.Dash"></HxIcon>
                     }
                 </td>
-                <td class="text-center align-middle" width="220">
+                <td class="text-center align-middle" width="150">
                     <HxProgress>
                         @if (ConvertProgress is not null)
                         {
-                            <HxProgressBar Value="ConvertProgress.ProgressPercent" Color="ThemeColor.Success" />
+                            <HxProgressBar Value="ConvertProgress.ProgressPercent" Label="@(ConvertProgress.ProgressPercent + "%")" Color="ThemeColor.Success" />
                         }
                         else
                         {
                             <HxProgressBar Value="0" Color="ThemeColor.Success" />
                         }
                     </HxProgress>
+                </td>
+                <td class="text-center align-middle" width="70">
+                    @if (ConvertProgress is not null)
+                    {
+                        @(GetAdjustedDownloadSpeed(ConvertProgress))
+                    }
+                    else
+                    {
+                        <HxIcon Icon="BootstrapIcon.Dash"></HxIcon>
+                    }
+                </td>
+                <td class="text-center align-middle" width="100" style="font-family: 'Roboto', sans-serif;">
+                    @if (ConvertProgress is not null && SmoothedETA.TotalSeconds > 0)
+                    {
+                        @($"{SmoothedETA.Hours:00}:{SmoothedETA.Minutes:00}:{SmoothedETA.Seconds:00}")
+                    }
+                    else
+                    {
+                        <HxIcon Icon="BootstrapIcon.Dash"></HxIcon>
+                    }
                 </td>
             </tr>
         </tbody>
