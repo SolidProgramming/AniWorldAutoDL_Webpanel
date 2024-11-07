@@ -714,12 +714,12 @@
                     Download = Download,
                     HasStopMark = CronJob.StopMarkDownload.HasStopMark
                 };
+            ToastService.AddMessage(InfoMessage.StopmarkSet, MessageType.Secondary);
         }
         else
         {
             CronJob.StopMarkDownload = default;
+            ToastService.AddMessage(InfoMessage.StopmarkUnset, MessageType.Secondary);
         }
-
-        //StateHasChanged();
     }
 }

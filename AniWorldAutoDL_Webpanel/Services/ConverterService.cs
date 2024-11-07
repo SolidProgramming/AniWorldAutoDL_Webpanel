@@ -138,6 +138,9 @@ namespace AniWorldAutoDL_Webpanel.Services
             }
             catch (OperationCanceledException)
             {
+                if (File.Exists(filePath))
+                    File.Delete(filePath);
+
                 if (AbortIsSkip)
                 {
                     return new CommandResultExt(skipped: true);
@@ -149,6 +152,9 @@ namespace AniWorldAutoDL_Webpanel.Services
             }
             catch (Exception ex)
             {
+                if (File.Exists(filePath))
+                    File.Delete(filePath);
+
                 logger.LogError($"{DateTime.Now} |FFMPEG: {ex}");
             }
             finally
