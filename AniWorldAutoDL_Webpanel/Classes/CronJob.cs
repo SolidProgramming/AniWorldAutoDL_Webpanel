@@ -202,7 +202,7 @@ namespace AniWorldAutoDL_Webpanel.Classes
                     }
                 }
 
-                Dictionary<Language, List<string>> languageRedirectLinks = HosterHelper.GetLanguageRedirectLinks(html);
+                Dictionary<Language, List<string>>? languageRedirectLinks = HosterHelper.GetLanguageRedirectLinks(html);
 
                 if (languageRedirectLinks == null || languageRedirectLinks.Count == 0)
                     continue;
@@ -237,7 +237,7 @@ namespace AniWorldAutoDL_Webpanel.Classes
                         logMessage = $"Für \"{originalEpisodeName} | S{episodeDownload.Download.Season:D2} E{episodeDownload.Download.Episode:D2}\" wurde keine Video Source gefunden.";
                         CronJobErrorEvent?.Invoke(MessageType.Secondary, logMessage);
                         continue;
-                    }                    
+                    }
 
                     episodeDownload.Download.Name = $"{originalEpisodeName.GetValidFileName()}[{language}]";
 
@@ -335,7 +335,7 @@ namespace AniWorldAutoDL_Webpanel.Classes
                 await Browser.CloseAsync();
             }
 
-            NextRun = null;          
+            NextRun = null;
         }
 
         private async Task<string?> GetEpisodeM3U8(string streamUrl, DownloaderPreferencesModel downloaderPreferences)
@@ -347,7 +347,7 @@ namespace AniWorldAutoDL_Webpanel.Classes
             });
 
             string proxyLogText = $"| Url: {downloaderPreferences.ProxyUri}@{downloaderPreferences.ProxyUsername}";
-            logger.LogInformation($"{DateTime.Now} | Use Proxy: {downloaderPreferences.UseProxy} {(downloaderPreferences.UseProxy ? proxyLogText : "")}");
+            logger.LogInformation($"{DateTime.Now} | Use Proxy: {downloaderPreferences.UseProxy} {( downloaderPreferences.UseProxy ? proxyLogText : "" )}");
 
             using IPage? page = await Browser.NewPageAsync();
 
@@ -416,6 +416,15 @@ namespace AniWorldAutoDL_Webpanel.Classes
                 return true;
             }
 
+
+            Match playerSourceMatch = new Regex("<source src=\"(.*?)\"").Match(html);
+
+            if (playerSourceMatch.Success)
+            {
+                m3u8 = HttpUtility.HtmlDecode(playerSourceMatch.Groups[1].Value);
+                return true;
+            }
+
             logger.LogWarning($"{DateTime.Now} | Could not fetch any video source!");
 
             return false;
@@ -425,25 +434,36 @@ namespace AniWorldAutoDL_Webpanel.Classes
         {
             logger.LogInformation($"{DateTime.Now} | Trying to fetch stream m3u8...");
 
+            List<string> selectorChain = [
+               "button.plyr__control.plyr__control--overlaid",
+               "media-play-button>img",
+               "#player > button"
+            ];
+
             await page.GoToAsync(streamUrl);
 
-            string selector = "button.plyr__control.plyr__control--overlaid";
-            bool foundSelector = await TryWaitForSelectorAsync(page, selector);
+            string? successSelector = null;
+            bool foundSelector = false;
 
-            if (!foundSelector)
+            foreach (string selector in selectorChain)
             {
-                selector = "media-play-button>img";
                 foundSelector = await TryWaitForSelectorAsync(page, selector);
 
-                if (!foundSelector)
-                    return default;
+                if (foundSelector)
+                {
+                    successSelector = selector;
+                    break;
+                }
             }
 
-            await page.ClickAsync(selector);
+            if (!foundSelector || string.IsNullOrEmpty(successSelector))
+                return default;
+
+            await page.ClickAsync(successSelector);
             await page.BringToFrontAsync();
 
-            selector = "media-player > media-provider > video > source";
-            await TryWaitForSelectorAsync(page, selector, 3000);
+            string selectorPlayer = "media-player > media-provider > video > source";
+            await TryWaitForSelectorAsync(page, selectorPlayer, 3000);
 
             return await page.GetContentAsync();
         }
@@ -452,11 +472,7 @@ namespace AniWorldAutoDL_Webpanel.Classes
         {
             bool removeSuccess = await apiService.RemoveFinishedDownload(episodeDownload);
 
-            if (removeSuccess)
-            {
-                CronJobErrorEvent?.Invoke(MessageType.Info, InfoMessage.DownloadDBRemoved);
-            }
-            else
+            if (!removeSuccess)
             {
                 CronJobErrorEvent?.Invoke(MessageType.Warning, WarningMessage.DownloadNotRemoved);
             }

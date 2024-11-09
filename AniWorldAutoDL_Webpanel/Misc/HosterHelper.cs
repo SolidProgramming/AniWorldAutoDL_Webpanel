@@ -50,16 +50,16 @@ namespace AniWorldAutoDL_Webpanel.Misc
         }
 
         //ToDo: Hoster Name dynamisch in den query einbinden
-        internal static Dictionary<Language, List<string>> GetLanguageRedirectLinks(string html)
+        internal static Dictionary<Language, List<string>>? GetLanguageRedirectLinks(string html)
         {
-            Dictionary<Language, List<string>> languageRedirectLinks = new();
+            Dictionary<Language, List<string>> languageRedirectLinks = [];
 
             HtmlDocument document = new();
             document.LoadHtml(html);
 
             List<HtmlNode> languageRedirectNodes = new HtmlNodeQueryBuilder()
                 .Query(document)
-                    .GetNodesByQuery("//div/a/i[@title='Hoster VOE']");
+                    .GetNodesByQuery("//div/a/i[contains(@title, 'Hoster')]");
 
             if (languageRedirectNodes == null || languageRedirectNodes.Count == 0)
                 return null;
@@ -109,7 +109,7 @@ namespace AniWorldAutoDL_Webpanel.Misc
             {
                 List<HtmlNode> redirectNodes = languageRedirectNodes.Where(_ => _.ParentNode.ParentNode.ParentNode.Attributes["data-lang-key"].Value == language.ToVOELanguageKey())
                 .ToList();
-                List<string> filteredRedirectLinks = new();
+                List<string> filteredRedirectLinks = [];
 
                 foreach (HtmlNode node in redirectNodes)
                 {

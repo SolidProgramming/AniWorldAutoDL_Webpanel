@@ -21,7 +21,7 @@ namespace AniWorldAutoDL_Webpanel.Misc
 
             switch (messageType)
             {
-                case Enums.MessageType.Success:
+                case MessageType.Success:
                     autoHideDelay = DefaultAutoHideDelaySuccess;
                     color = ThemeColor.Success;
                     break;
